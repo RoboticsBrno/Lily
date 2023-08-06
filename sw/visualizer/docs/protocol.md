@@ -20,17 +20,18 @@ Arguments at the end of the command can be optional. If an argument is optional,
 
 The arguments can be of the following types:
 
-| Type           | Description             |
-|----------------|-------------------------|
-| `uint8`        | Unsigned 8-bit integer  |
-| `int8`         | Signed 8-bit integer    |
-| `uint16`       | Unsigned 16-bit integer |
-| `int16`        | Signed 16-bit integer   |
-| `uint32`       | Unsigned 32-bit integer |
-| `int32`        | Signed 32-bit integer   |
-| `string`       | Null-terminated string  |
-| `rgb332`       | 8-bit rgb color         |
-| `type`         | Type identifier         |
+| Type id | Type           | Size (bytes) | Description             |
+|---------|----------------|--------------|-------------------------|
+| `0x00`  | `nil`          | 0            | Null                    |
+| `0x01`  | `uint8`        | 1            | Unsigned 8-bit integer  |
+| `0x02`  | `int8`         | 1            | Signed 8-bit integer    |
+| `0x03`  | `uint16`       | 2            | Unsigned 16-bit integer |
+| `0x04`  | `int16`        | 2            | Signed 16-bit integer   |
+| `0x05`  | `uint32`       | 4            | Unsigned 32-bit integer |
+| `0x06`  | `int32`        | 4            | Signed 32-bit integer   |
+| `0x07`  | `string`       | variable     | Null-terminated string  |
+| `0x08`  | `rgb332`       | 1            | 8-bit rgb color         |
+| `0x09`  | `type`         | 1            | Type identifier         |
 
 ## Command list
 
@@ -74,6 +75,7 @@ Draws a point.
 |-----------|------------|------------------------|
 | `x`       | `uint16`   | X coordinate           |
 | `y`       | `uint16`   | Y coordinate           |
+| `layer`   | `uint8`    | Layer index            |
 | `color?`  | `rgb332`   | Color (default: black) |
 | `radius?` | `uint16`   | Radius (default: 1)    |
 
@@ -87,6 +89,7 @@ Draws a line.
 | `y1`     | `uint16`   | Y coordinate of the first point  |
 | `x2`     | `uint16`   | X coordinate of the second point |
 | `y2`     | `uint16`   | Y coordinate of the second point |
+| `layer`  | `uint8`    | Layer index                      |
 | `color?` | `rgb332`   | Color (default: black)           |
 | `width?` | `uint16`   | Width (default: 1)               |
 
@@ -100,6 +103,7 @@ Draws a rectangle.
 | `y1`     | `uint16`   | Y coordinate of the first point     |
 | `x2`     | `uint16`   | X coordinate of the second point    |
 | `y2`     | `uint16`   | Y coordinate of the second point    |
+| `layer`  | `uint8`    | Layer index                         |
 | `color?` | `rgb332`   | Color (default: black)              |
 | `width?` | `uint16`   | Width (default: 1)                  |
 
@@ -112,6 +116,7 @@ Draws a circle.
 | `x`      | `uint16`   | X coordinate of the center point |
 | `y`      | `uint16`   | Y coordinate of the center point |
 | `r`      | `uint16`   | Radius                           |
+| `layer`  | `uint8`    | Layer index                      |
 | `color?` | `rgb332`   | Color (default: black)           |
 | `width?` | `uint16`   | Width (default: 1)               |
 
