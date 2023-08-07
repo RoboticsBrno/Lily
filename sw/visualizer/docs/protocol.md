@@ -2,7 +2,7 @@
 
 ## Overview
 
-The visualizer receives data from a byte stream and displays it on the screen. The data is sent in the form of commands, which consist of a command byte and a variable number of arguments, strictly depending on the command. The commands do not offer any feedback. Command synchronization is achieved by using the COBS algorithm.
+The visualizer receives data from a byte stream and displays it on the screen. The data is sent in the form of commands, which consist of a command byte and a variable number of arguments, strictly depending on the command. The commands do not offer any feedback. Data frame synchronization is achieved by using the COBS algorithm.
 
 ## Command structure
 
@@ -37,19 +37,19 @@ The arguments can be of the following types:
 
 The following commands are available:
 
-| Command byte | Name           | Description                                                                 |
-|--------------|----------------|-----------------------------------------------------------------------------|
-| `0x01`       | `CLEAR_SCREEN` | Clears the screen.                                                          |
-| `0x02`       | `CLEAR_LAYER`  | Clears the specified layer.                                                 |
-| `0x10`       | `DRAW_POINT`   | Draws a point.                                                              |
-| `0x11`       | `DRAW_LINE`    | Draws a line.                                                               |
-| `0x12`       | `DRAW_RECT`    | Draws a rectangle.                                                          |
-| `0x13`       | `DRAW_CIRCLE`  | Draws a circle.                                                             |
-| `0x30`       | `KV_SET`       | Sets a key-value pair.                                                      |
-| `0x31`       | `KV_DELETE`    | Deletes a key-value pair.                                                   |
-| `0x32`       | `KV_CLEAR`     | Clears the key-value store.                                                 |
-| `0x40`       | `CONFIG_ADD`   | Adds a configuration item.                                                  |
-| `0x41`       | `CONFIG_SET`   | Sets a configuration item.                                                  |
+| Command byte | Name             | Description                                                                 |
+|--------------|------------------|-----------------------------------------------------------------------------|
+| `0x01`       | `CLEAR_SCREEN`   | Clears the screen.                                                          |
+| `0x02`       | `CLEAR_LAYER`    | Clears the specified layer.                                                 |
+| `0x10`       | `DRAW_POINT`     | Draws a point.                                                              |
+| `0x11`       | `DRAW_LINE`      | Draws a line.                                                               |
+| `0x12`       | `DRAW_RECTANGLE` | Draws a rectangle.                                                          |
+| `0x13`       | `DRAW_CIRCLE`    | Draws a circle.                                                             |
+| `0x30`       | `KV_SET`         | Sets a key-value pair.                                                      |
+| `0x31`       | `KV_DELETE`      | Deletes a key-value pair.                                                   |
+| `0x32`       | `KV_CLEAR`       | Clears the key-value store.                                                 |
+| `0x40`       | `CONFIG_ADD`     | Adds a configuration item.                                                  |
+| `0x41`       | `CONFIG_SET`     | Sets a configuration item.                                                  |
 
 ## Command details
 
@@ -93,7 +93,7 @@ Draws a line.
 | `color?` | `rgb332`   | Color (default: black)           |
 | `width?` | `uint16`   | Width (default: 1)               |
 
-### `DRAW_RECT`
+### `DRAW_RECTANGLE`
 
 Draws a rectangle.
 
