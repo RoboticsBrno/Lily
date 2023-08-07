@@ -413,8 +413,8 @@ class DrawCircle(Command):
 
 
 COMMANDS = {
-    0x00: ClearScreen,
-    0x01: ClearLayer,
+    0x01: ClearScreen,
+    0x02: ClearLayer,
     0x10: DrawPoint,
     0x11: DrawLine,
     0x12: DrawRectangle,
