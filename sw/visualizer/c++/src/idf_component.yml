@@ -1,0 +1,4 @@
+version: "0.0.0"
+description: "Visualizer-cpp - A library for connecting to the Visualizer server"
+dependencies:
+  idf: ">=5.1"
