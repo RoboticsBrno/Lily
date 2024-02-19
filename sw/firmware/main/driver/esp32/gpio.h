@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 
 #include "driver/gpio.h"
 
@@ -9,11 +10,13 @@ namespace driver::esp32 {
 
 
 class Gpio {
-    gpio_num_t pin;
-    std::function<void()> interruptHandler;
+    using InterruptHandler = std::function<void()>;
 
-    static void onInterrupt(void* gpio) {
-        static_cast<Gpio*>(gpio)->interruptHandler();
+    gpio_num_t pin;
+    std::unique_ptr<InterruptHandler> interruptHandler;
+
+    static void onInterrupt(void* handler) {
+        static_cast<InterruptHandler*>(handler)->operator()();
     }
 
 public:
@@ -49,10 +52,16 @@ public:
     }
 
     Gpio(const Gpio&) = delete;
-    Gpio(Gpio&&) = delete;
+    Gpio(Gpio&& other):
+        pin(other.pin),
+        interruptHandler(std::move(other.interruptHandler))
+    {
+        other.pin = GPIO_NUM_NC;
+    }
 
     ~Gpio() {
         gpio_reset_pin(pin);
+        disableInterrupt();
     }
 
     void setDirection(Direction direction) {
@@ -69,7 +78,7 @@ public:
 
     void enableInterrupt(Edge edge) {
         gpio_set_intr_type(pin, static_cast<gpio_int_type_t>(edge));
-        gpio_isr_handler_add(pin, &onInterrupt, this);
+        gpio_isr_handler_add(pin, &onInterrupt, interruptHandler.get());
     }
 
     void disableInterrupt() {
@@ -78,7 +87,7 @@ public:
     }
 
     void onInterrupt(std::function<void()> handler) {
-        interruptHandler = handler;
+        interruptHandler = std::make_unique<InterruptHandler>(std::move(handler));
     }
 
     bool read() {

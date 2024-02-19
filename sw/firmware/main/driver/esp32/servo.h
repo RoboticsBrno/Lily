@@ -10,6 +10,11 @@ public:
         throw "Not implemented";
     }
 
+    Servo(Servo const&) = delete;
+    Servo(Servo&& other) {
+        throw "Not implemented";
+    }
+
     void release() {
         throw "Not implemented";
     }

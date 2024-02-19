@@ -11,8 +11,14 @@ class PincerCatcher {
     Servo servoRight;
 public:
     PincerCatcher(Servo servoLeft, Servo servoRight):
-        servoLeft(servoLeft),
-        servoRight(servoRight)
+        servoLeft(std::move(servoLeft)),
+        servoRight(std::move(servoRight))
+    {}
+
+    PincerCatcher(PincerCatcher const&) = delete;
+    PincerCatcher(PincerCatcher&& other):
+        servoLeft(std::move(other.servoLeft)),
+        servoRight(std::move(other.servoRight))
     {}
 
     void setPos(int pos) {

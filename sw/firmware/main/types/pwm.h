@@ -2,8 +2,8 @@
 
 #include <concepts>
 
-template<typename PWM>
-concept isPWM = requires(PWM pin) {
+template<typename Pwm>
+concept isPwm = requires(Pwm pin) {
     pin.setDuty(0);
-    pin.setDuty(PWM::MaxDuty);
+    pin.setDuty(std::decay_t<Pwm>::MaxDuty);
 };

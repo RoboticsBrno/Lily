@@ -3,47 +3,76 @@
 #include <tuple>
 
 #include "driver/tickEncoder.h"
-#include "driver/pwmMotor.h"
+#include "driver/drv8833.h"
+#include "driver/rpLidar.h"
 
 #include "driver/esp32/gpio.h"
 #include "driver/esp32/pwm.h"
 #include "driver/esp32/pincerCatcher.h"
-#include "driver/esp32/lidar.h"
+#include "driver/esp32/serial.h"
 
 
 namespace robot::esp32 {
 
+using Pwm = typename driver::esp32::Pwm;
+using Gpio = typename driver::esp32::Gpio;
+using Servo = typename driver::esp32::Servo;
+using Serial = typename driver::esp32::Serial;
+using PincerCatcher = typename driver::esp32::PincerCatcher;
+
+using DRV8833 = typename driver::DRV8833<Pwm, Gpio>;
+using DRV8833Channel = typename driver::DRV8833Channel<Pwm>;
+using TickEncoder = typename driver::TickEncoder<Gpio>;
+using RpLidar = typename driver::RpLidar<Serial, Pwm>;
+
 
 struct Robot {
-    driver::PwmMotor<driver::esp32::Pwm> motorLeft;
-    driver::PwmMotor<driver::esp32::Pwm> motorRight;
+    DRV8833 motorDriver;
 
-    driver::TickEncoder<driver::esp32::Gpio> encoderLeft;
-    driver::TickEncoder<driver::esp32::Gpio> encoderRight;
+    DRV8833Channel& motorLeft;
+    DRV8833Channel& motorRight;
 
-    driver::esp32::PincerCatcher pincerCatcher;
+    TickEncoder encoderLeft;
+    TickEncoder encoderRight;
 
-    driver::esp32::Lidar lidar;
+    PincerCatcher pincerCatcher;
+
+    RpLidar lidar;
 
     Robot(
-        gpio_num_t pinMotorLeft,
-        gpio_num_t pinMotorRight,
-        std::pair<gpio_num_t, gpio_num_t> pinsEncoderLeft,
-        std::pair<gpio_num_t, gpio_num_t> pinsEncoderRight,
-        gpio_num_t pinServoLeft,
-        gpio_num_t pinServoRight,
-        std::tuple<gpio_num_t, gpio_num_t, gpio_num_t> pinsLidar
+        DRV8833 motorDriver,
+        TickEncoder encoderLeft,
+        TickEncoder encoderRight,
+        PincerCatcher pincerCatcher,
+        RpLidar lidar
     ):
-        motorLeft(driver::esp32::Pwm(pinMotorLeft, LEDC_CHANNEL_0, LEDC_TIMER_0)),
-        motorRight(driver::esp32::Pwm(pinMotorRight, LEDC_CHANNEL_1, LEDC_TIMER_0)),
-        encoderLeft(std::tuple{ pinsEncoderLeft.first }, std::tuple{ pinsEncoderLeft.second }),
-        encoderRight(std::tuple{ pinsEncoderRight.first }, std::tuple{ pinsEncoderRight.second }),
-        pincerCatcher(
-            driver::esp32::Servo(pinServoLeft),
-            driver::esp32::Servo(pinServoRight)
-        ),
-        lidar(pinsLidar)
+        motorDriver(std::move(motorDriver)),
+        motorLeft(motorDriver[0]),
+        motorRight(motorDriver[1]),
+        encoderLeft(std::move(encoderLeft)),
+        encoderRight(std::move(encoderRight)),
+        pincerCatcher(std::move(pincerCatcher)),
+        lidar(std::move(lidar))
     {}
+
+    Robot(Robot const&) = delete;
+    Robot(Robot&& other) = delete;
+
+    void start() {
+        motorDriver.start();
+        motorLeft.setPower(0);
+        motorRight.setPower(0);
+
+        lidar.start();
+    }
+
+    void stop() {
+        motorDriver.sleep();
+        motorLeft.setPower(0);
+        motorRight.setPower(0);
+
+        lidar.stop();
+    }
 };
 
 

@@ -2,31 +2,31 @@
 
 #include <concepts>
 
-template<typename GPIO>
-concept isGPIO = requires(GPIO pin) {
-    GPIO::Edge::Rising;
-    GPIO::Edge::Falling;
-    GPIO::Edge::Both;
+template<typename Gpio>
+concept isGpio = requires(Gpio pin) {
+    Gpio::Edge::Rising;
+    Gpio::Edge::Falling;
+    Gpio::Edge::Both;
 
-    GPIO::Direction::Disable;
-    GPIO::Direction::Input;
-    GPIO::Direction::Output;
+    Gpio::Direction::Disable;
+    Gpio::Direction::Input;
+    Gpio::Direction::Output;
 
-    GPIO::Pull::None;
-    GPIO::Pull::Up;
-    GPIO::Pull::Down;
+    Gpio::Pull::None;
+    Gpio::Pull::Up;
+    Gpio::Pull::Down;
 
-    pin.setDirection(GPIO::Direction::Disable);
-    pin.setDirection(GPIO::Direction::Input);
-    pin.setDirection(GPIO::Direction::Output);
+    pin.setDirection(Gpio::Direction::Disable);
+    pin.setDirection(Gpio::Direction::Input);
+    pin.setDirection(Gpio::Direction::Output);
 
-    pin.setPull(GPIO::Pull::None);
-    pin.setPull(GPIO::Pull::Up);
-    pin.setPull(GPIO::Pull::Down);
+    pin.setPull(Gpio::Pull::None);
+    pin.setPull(Gpio::Pull::Up);
+    pin.setPull(Gpio::Pull::Down);
 
-    pin.enableInterrupt(GPIO::Edge::Rising);
-    pin.enableInterrupt(GPIO::Edge::Falling);
-    pin.enableInterrupt(GPIO::Edge::Both);
+    pin.enableInterrupt(Gpio::Edge::Rising);
+    pin.enableInterrupt(Gpio::Edge::Falling);
+    pin.enableInterrupt(Gpio::Edge::Both);
     pin.disableInterrupt();
 
     pin.onInterrupt([]() {});

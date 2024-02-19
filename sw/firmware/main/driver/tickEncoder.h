@@ -10,12 +10,12 @@
 namespace driver {
 
 
-template<isGPIO GPIO>
+template<isGpio Gpio>
 class TickEncoder {
-    GPIO pinA;
-    GPIO pinB;
+    Gpio pinA;
+    Gpio pinB;
 
-    unsigned int ticks = 0;
+    unsigned ticks = 0;
     OverflowFlag overflowFlag = OverflowFlag::None;
 
     void tickUp() {
@@ -50,34 +50,17 @@ class TickEncoder {
         }
     }
 
-    template<typename... Args, size_t... Is>
-    TickEncoder(std::tuple<Args...>&& argsA, std::tuple<Args...>&& argsB, std::index_sequence<Is...>):
-        pinA(std::get<Is>(std::forward<std::tuple<Args...>>(argsA))...),
-        pinB(std::get<Is>(std::forward<std::tuple<Args...>>(argsB))...)
-    {
-        init();
-    }
-
     void init() {
         // TODO: initialize pins
     }
 
 public:
-    TickEncoder(GPIO pinA, GPIO pinB):
-        pinA(pinA),
-        pinB(pinB)
+    TickEncoder(Gpio pinA, Gpio pinB):
+        pinA(std::move(pinA)),
+        pinB(std::move(pinB))
     {
         init();
     }
-
-    template<typename... Args>
-    TickEncoder(std::tuple<Args...>&& argsA, std::tuple<Args...>&& argsB):
-        TickEncoder(
-            std::forward<std::tuple<Args...>>(argsA),
-            std::forward<std::tuple<Args...>>(argsB),
-            std::index_sequence_for<Args...>()
-        )
-    {}
 
     std::pair<unsigned, OverflowFlag> getTicks() {
         return std::make_pair(ticks, overflowFlag);

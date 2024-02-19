@@ -8,6 +8,7 @@
 
 template<typename Robot>
 concept isRobot = requires(Robot robot) {
+    robot.start();
     robot.stop();
 
     { robot.motorLeft } -> isMotor;

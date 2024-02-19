@@ -11,7 +11,7 @@ class Pwm {
     ledc_timer_t timer;
 
 public:
-    static inline unsigned MaxDuty = 1023;
+    static constexpr unsigned MaxDuty = 1023;
 
     Pwm(gpio_num_t pin, ledc_channel_t channel, ledc_timer_t timer):
         channel(channel),
@@ -41,8 +41,18 @@ public:
         ledc_channel_config(&channelConfig);
     }
 
+    Pwm(Pwm const&) = delete;
+    Pwm(Pwm&& other):
+        channel(other.channel),
+        timer(other.timer)
+    {
+        other.channel = LEDC_CHANNEL_MAX;
+    }
+
     ~Pwm() {
-        ledc_stop(LEDC_LOW_SPEED_MODE, channel, 0);
+        if (channel != LEDC_CHANNEL_MAX) {
+            ledc_stop(LEDC_LOW_SPEED_MODE, channel, 0);
+        }
     }
 
     void setDuty(uint32_t duty) {
