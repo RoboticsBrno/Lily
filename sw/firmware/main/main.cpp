@@ -5,6 +5,9 @@
 #include "robot.h"
 #include "types/robot.h"
 
+#include "logic/game.h"
+#include "test/hw.h"
+
 
 robot::esp32::Robot createRobot() {
     using namespace robot::esp32;
@@ -47,7 +50,7 @@ auto lily = createRobot();
 
 
 int main() {
-    static_assert(isRobot<decltype(lily)>);
+    test::robot(lily);
 }
 
 

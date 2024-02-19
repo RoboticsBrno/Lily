@@ -22,15 +22,15 @@ public:
     Point() : x(0), y(0) {}
     Point(T x, T y) : x(x), y(y) {}
 
-    Point operator+(const Vector<T> &vec) const {
+    Point operator+(Vector<T> vec) const {
         return Point(x + vec.x, y + vec.y);
     }
 
-    Point operator-(const Vector<T> &vec) const {
+    Point operator-(Vector<T> vec) const {
         return Point(x - vec.x, y - vec.y);
     }
 
-    Vector<T> operator-(const Point &other) const;
+    Vector<T> operator-(Point other) const;
 
     template<int I>
     T get() const {
@@ -57,11 +57,11 @@ public:
     Vector() : x(0), y(0) {}
     Vector(T x, T y) : x(x), y(y) {}
 
-    Vector operator+(const Vector &other) const {
+    Vector operator+(Vector other) const {
         return Vector(x + other.x, y + other.y);
     }
 
-    Vector operator-(const Vector &other) const {
+    Vector operator-(Vector other) const {
         return Vector(x - other.x, y - other.y);
     }
 
@@ -77,24 +77,28 @@ public:
         return Vector(x / scalar, y / scalar);
     }
 
-    bool operator==(const Vector &other) const {
+    bool operator==(Vector other) const {
         return x == other.x && y == other.y;
     }
 
-    bool operator!=(const Vector &other) const {
+    bool operator!=(Vector other) const {
         return x != other.x || y != other.y;
     }
 
-    T dot(const Vector &other) const {
+    T dot(Vector other) const {
         return x * other.x + y * other.y;
     }
 
-    T cross(const Vector &other) const {
+    T cross(Vector other) const {
         return x * other.y - y * other.x;
     }
 
     float angle() const {
         return lmath::atan2(y, x);
+    }
+
+    float angle(Vector other) const {
+        return lmath::atan2(cross(other), dot(other));
     }
 
     T length2() const {
@@ -144,7 +148,7 @@ public:
 
 
 template<typename T>
-Vector<T> Point<T>::operator-(const Point<T> &other) const {
+Vector<T> Point<T>::operator-(Point<T> other) const {
     return Vector(x - other.x, y - other.y);
 }
 
@@ -170,7 +174,7 @@ struct tuple_element<1, Point<T>> {
 };
 
 template<typename T>
-std::string to_string(const Point<T> &point) {
+std::string to_string(Point<T> point) {
     return "Point(" + std::to_string(point.x) + "," + std::to_string(point.y) + ")";
 }
 
@@ -188,7 +192,7 @@ struct tuple_element<1, Vector<T>> {
 };
 
 template<typename T>
-std::string to_string(const Vector<T> &vector) {
+std::string to_string(Vector<T> vector) {
     return "Vector(" + std::to_string(vector.x) + "," + std::to_string(vector.y) + ")";
 }
 

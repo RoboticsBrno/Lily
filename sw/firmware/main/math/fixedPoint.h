@@ -63,16 +63,16 @@ public:
         return *this;
     }
 
-    FPNum sin() const {
-        return FPNum(lmath::sin(static_cast<float>(_value) * Ratio::num / Ratio::den));
+    float sin() const {
+        return lmath::sin(static_cast<float>(_value) * Ratio::num / Ratio::den);
     }
 
-    FPNum cos() const {
-        return FPNum(lmath::cos(static_cast<float>(_value) * Ratio::num / Ratio::den));
+    float cos() const {
+        return lmath::cos(static_cast<float>(_value) * Ratio::num / Ratio::den);
     }
 
-    FPNum atan2(FPNum const& other) const {
-        return FPNum(lmath::atan2(static_cast<float>(_value) * Ratio::num / Ratio::den, static_cast<float>(other._value) * Ratio::num / Ratio::den));
+    float atan2(FPNum const& other) const {
+        return lmath::atan2(static_cast<float>(_value) * Ratio::num / Ratio::den, static_cast<float>(other._value) * Ratio::num / Ratio::den);
     }
 
     FPNum sqrt() const {
@@ -153,5 +153,12 @@ FPBinDec operator""_fpb(long double value) {
 
 } // namespace literals
 
-
 } // namespace fp
+
+
+template<typename T, isRatio R>
+struct std::numeric_limits<fp::FPNum<T, R>> {
+    static constexpr bool is_specialized = true;
+    static constexpr fp::FPNum<T, R> min() { return fp::FPNum<T, R>(std::numeric_limits<T>::min(), fp::FPNum<T, R>::raw_tag); }
+    static constexpr fp::FPNum<T, R> max() { return fp::FPNum<T, R>(std::numeric_limits<T>::max(), fp::FPNum<T, R>::raw_tag); }
+};

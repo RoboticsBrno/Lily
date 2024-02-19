@@ -27,10 +27,12 @@ void lidar(isLidar auto& lidar) {
 
     std::cout << "Measurements:" << std::endl;
 
-    auto available = lidar.available();
-    for (unsigned i = 0; i < available; ++i) {
+    while (true) {
         auto measurement = lidar.getMeasurement();
-        std::cout << "  D: " << measurement.distance << " A: " << measurement.angle << std::endl;
+        if (!measurement) {
+            break;
+        }
+        std::cout << "  D: " << measurement->distance << " A: " << measurement->angle << std::endl;
     }
 
     lidar.stop();
@@ -74,12 +76,12 @@ void pincerCatcher(isPincerCatcher auto& pincerCatcher) {
 
     std::cout << "Opening pincer" << std::endl;
 
-    pincerCatcher.open();
+    pincerCatcher.setPos(100);
     std::this_thread::sleep_for(1s);
 
     std::cout << "Closing pincer" << std::endl;
 
-    pincerCatcher.close();
+    pincerCatcher.setPos(0);
     std::this_thread::sleep_for(1s);
 
     std::cout << "---PincerCatcher test complete---" << std::endl;
@@ -94,7 +96,20 @@ void encoder(isTickEncoder auto& encoder) {
     std::cout << "Reading encoder" << std::endl;
 
     for (int i = 0; i < 10; ++i) {
-        std::cout << "Ticks: " << encoder.read() << std::endl;
+        auto [ ticks, overflow ] = encoder.getTicks();
+        std::cout << "Ticks: " << ticks << " OF flag: ";
+        switch (overflow) {
+            case OverflowFlag::None:
+                std::cout << "None";
+                break;
+            case OverflowFlag::Overflow:
+                std::cout << "Overflow";
+                break;
+            case OverflowFlag::Underflow:
+                std::cout << "Underflow";
+                break;
+        }
+        encoder.resetOverflow();
         std::this_thread::sleep_for(200ms);
     }
 
@@ -103,6 +118,8 @@ void encoder(isTickEncoder auto& encoder) {
 
 
 void robot(isRobot auto& robot) {
+    using namespace std::chrono_literals;
+
     std::cout << "---Testing robot---" << std::endl;
 
     std::cout << "Starting robot" << std::endl;

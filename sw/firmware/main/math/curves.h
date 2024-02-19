@@ -54,13 +54,23 @@ public:
         }
     }
 
+    /**
+     * @brief Returns the distance from the line to the point. If the
+     * distance is negative, the point is on the right side of the line.
+     * @param point The point.
+     * @return The distance from the line to the point.
+     */
     T distance(Point<T> point) const {
         auto [x1, y1] = p1;
         auto [x2, y2] = p2;
         auto [x3, y3] = point;
-        auto numerator = lmath::abs((x2 - x1) * (y1 - y3) - (x1 - x3) * (y2 - y1));
+        auto numerator = (x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1);
         auto denominator = lmath::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
         return numerator / denominator;
+    }
+
+    Vector<T> asVector() const {
+        return p2 - p1;
     }
 
     std::string to_string() const override {
@@ -159,6 +169,19 @@ public:
         float t2 = knots[i + 1];
 
         return HermiteCubic<T>(points[i], points[i + 1]).get((t - t1) / (t2 - t1));
+    }
+};
+
+
+template<typename T>
+class JaggedSpline {
+public:
+    std::vector<Point<T>> points;
+
+    JaggedSpline(std::vector<Point<T>> points) : points(std::move(points)) {}
+
+    Line<T> segment(int i) const {
+        return Line<T>(points[i], points[i + 1]);
     }
 };
 

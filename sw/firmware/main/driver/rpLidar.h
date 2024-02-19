@@ -63,14 +63,14 @@ public:
         while (_serial.available() >= 5) {
             uint8_t data = _serial.read();
             // first byte should contain start bit and its inverse
-            if (data & 0x01 == (data >> 1) & 0x01) {
+            if ((data & 0x01) == ((data >> 1) & 0x01)) {
                 continue;
             }
             measurement.quality = data >> 2;
 
             data = _serial.read();
             // last bit of second byte should be 1
-            if (data & 0x01 == 0) {
+            if ((data & 0x01) == 0) {
                 continue;
             }
             measurement.angle = data >> 1;
@@ -80,6 +80,8 @@ public:
 
             return measurement;
         }
+
+        return std::nullopt;
     }
 };
 

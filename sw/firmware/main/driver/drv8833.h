@@ -13,7 +13,7 @@ class DRV8833Channel {
     bool inverted;
 
 public:
-    static constexpr int MaxPower = Pwm::MaxDuty;
+    using PowerRatio = Pwm::DutyRatio;
 
     DRV8833Channel(Pwm pwmA, Pwm pwmB, bool inverted = false):
         pwms{ std::move(pwmA), std::move(pwmB) },

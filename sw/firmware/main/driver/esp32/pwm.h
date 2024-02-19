@@ -1,6 +1,9 @@
 #pragma once
 
+#include <ratio>
+
 #include "driver/ledc.h"
+#include "util/concepts.h"
 
 
 namespace driver::esp32 {
@@ -11,7 +14,7 @@ class Pwm {
     ledc_timer_t timer;
 
 public:
-    static constexpr unsigned MaxDuty = 1023;
+    using DutyRatio = std::ratio<1, 1024>;
 
     Pwm(gpio_num_t pin, ledc_channel_t channel, ledc_timer_t timer):
         channel(channel),
