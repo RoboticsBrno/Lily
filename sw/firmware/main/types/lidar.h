@@ -4,12 +4,7 @@
 #include <optional>
 #include <ratio>
 
-
-namespace detail {
-
-    template<typename T>
-    concept isRatio = std::ratio<T::num, T::den>::den != 0;
-}
+#include "util/concepts.h"
 
 
 struct Measurement {
@@ -26,5 +21,5 @@ concept isLidar = requires(Lidar lidar) {
 
     { lidar.getMeasurement() } -> std::same_as<std::optional<Measurement>>;
 }
-&& detail::isRatio<typename std::decay_t<Lidar>::DistanceUnit>
-&& detail::isRatio<typename std::decay_t<Lidar>::AngleUnit>;
+&& isRatio<typename std::decay_t<Lidar>::DistanceUnit>
+&& isRatio<typename std::decay_t<Lidar>::AngleUnit>;
