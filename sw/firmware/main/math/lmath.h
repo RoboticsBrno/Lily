@@ -55,6 +55,18 @@ auto sqrt(T val) {
 
 
 template <typename T>
+    requires requires(T val) { val.abs(); }
+auto abs(T val) {
+    return val.abs();
+}
+
+template <typename T>
+auto abs(T val) {
+    return std::abs(val);
+}
+
+
+template <typename T>
 static T radians(T degrees) {
     return degrees * M_PI / 180;
 }

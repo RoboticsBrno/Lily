@@ -93,7 +93,7 @@ public:
     }
 
     static FPNum fromFloat(float value) {
-        return FPNum(std::round(value * Ratio::den / Ratio::num));
+        return FPNum(std::llround(value * Ratio::den / Ratio::num), raw_tag);
     }
 };
 
