@@ -81,7 +81,7 @@ class ClearScreen(Command):
             The bytes.
         """
 
-        return b"\x00"
+        return bytes([COMMANDS_INVERSE[type(self)]])
 
     def __repr__(self) -> str:
         return "ClearScreen()"
@@ -173,7 +173,8 @@ class DrawPoint(Command):
 class DrawLine(Command):
     """Draw a line."""
 
-    def __init__(self, x1: Uint16, y1: Uint16, x2: Uint16, y2: Uint16, layer: Uint8, color: Rgb332, width: Uint16):
+    def __init__(self, x1: Uint16, y1: Uint16, x2: Uint16, y2: Uint16,
+                 layer: Uint8, color: Rgb332, width: Uint16):
         self.x1 = x1
         self.y1 = y1
         self.x2 = x2

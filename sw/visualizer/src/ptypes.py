@@ -497,9 +497,9 @@ class Rgb332(ProtocolType):
         red, green, blue = self.value
 
         # map 8-bit values to 3-bit values
-        red = (red >> 5) & 0b111
-        green = (green >> 5) & 0b111
-        blue = (blue >> 6) & 0b11
+        red = red & 0b111
+        green = green & 0b111
+        blue = blue & 0b11
 
         value = (red << 5) | (green << 2) | blue
 
