@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from visualizer import Viz, Point, Line, Rectangle, Circle, Rgb
 from ptypes import ProtocolType, Uint8, Uint16, Rgb332
 from typing import Generic, TypeVar
 
@@ -51,16 +50,6 @@ class Command(ABC):
         pass
 
     @abstractmethod
-    def call(self, visualizer: Viz) -> None:
-        """Call the Command.
-
-        Args:
-            visualizer: The visualizer.
-        """
-
-        pass
-
-    @abstractmethod
     def __repr__(self) -> str:
         pass
 
@@ -93,15 +82,6 @@ class ClearScreen(Command):
         """
 
         return b"\x00"
-
-    def call(self, visualizer: Viz) -> None:
-        """Call the ClearScreen.
-
-        Args:
-            visualizer: The Visualizer.
-        """
-
-        visualizer.clear_screen()
 
     def __repr__(self) -> str:
         return "ClearScreen()"
@@ -136,15 +116,6 @@ class ClearLayer(Command):
         """
 
         return bytes(COMMANDS_INVERSE[type(self)]) + self.layer.to_bytes()
-
-    def call(self, visualizer: Viz) -> None:
-        """Call the ClearLayer.
-
-        Args:
-            visualizer: The Visualizer.
-        """
-
-        visualizer.clear_layer(self.layer.value)
 
     def __repr__(self) -> str:
         return f"ClearLayer({self.layer})"
@@ -194,15 +165,6 @@ class DrawPoint(Command):
             + self.color.to_bytes()
             + self.thickness.to_bytes()
         )
-
-    def call(self, visualizer: Viz) -> None:
-        """Call the DrawPoint.
-
-        Args:
-            visualizer: The Visualizer.
-        """
-
-        visualizer.draw(Point(self.x.value, self.y.value, Rgb(self.color.to_rgb888()), self.thickness.value), self.layer.value)
 
     def __repr__(self) -> str:
         return f"DrawPoint({self.x}, {self.y}, {self.color}, {self.thickness})"
@@ -259,20 +221,6 @@ class DrawLine(Command):
             + self.width.to_bytes()
         )
 
-    def call(self, visualizer: Viz) -> None:
-        """Call the DrawLine.
-
-        Args:
-            visualizer: The Visualizer.
-        """
-
-        visualizer.draw(Line(
-            Point(self.x1.value, self.y1.value),
-            Point(self.x2.value, self.y2.value),
-            Rgb(self.color.to_rgb888()),
-            self.width.value
-        ), self.layer.value)
-
     def __repr__(self) -> str:
         return f"DrawLine({self.x1}, {self.y1}, {self.x2}, {self.y2}, {self.color}, {self.width})"
 
@@ -328,20 +276,6 @@ class DrawRectangle(Command):
             + self.width.to_bytes()
         )
 
-    def call(self, visualizer: Viz) -> None:
-        """Call the DrawRectangle.
-
-        Args:
-            visualizer: The Visualizer.
-        """
-
-        visualizer.draw(Rectangle(
-            Point(self.x1.value, self.y1.value),
-            Point(self.x2.value, self.y2.value),
-            Rgb(self.color.to_rgb888()),
-            self.width.value
-        ), self.layer.value)
-
     def __repr__(self) -> str:
         return f"DrawRectangle({self.x1}, {self.y1}, {self.x2}, {self.y2}, {self.color}, {self.width})"
 
@@ -393,20 +327,6 @@ class DrawCircle(Command):
             + self.color.to_bytes()
             + self.width.to_bytes()
         )
-
-    def call(self, visualizer: Viz) -> None:
-        """Call the DrawCircle.
-
-        Args:
-            visualizer: The Visualizer.
-        """
-
-        visualizer.draw(Circle(
-            Point(self.x.value, self.y.value),
-            self.r.value,
-            Rgb(self.color.to_rgb888()),
-            self.width.value
-        ), self.layer.value)
 
     def __repr__(self) -> str:
         return f"DrawCircle({self.x}, {self.y}, {self.r}, {self.color}, {self.width})"
