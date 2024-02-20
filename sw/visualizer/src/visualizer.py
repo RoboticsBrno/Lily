@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 import pygame
 from typing import Iterator
+from collections import deque
+from typing import Callable
 
 
 class Color(ABC):
@@ -185,10 +187,7 @@ class Rectangle(Graphics):
         return Rectangle(self.p1.scale(factor), self.p2.scale(factor), self.color, self.thickness)
 
     def draw(self, surface: pygame.Surface) -> None:
-        width = self.p2.x - self.p1.x
-        height = self.p2.y - self.p1.y
-
-        pygame.draw.rect(surface, tuple(self.color), (self.p1.x, self.p1.y, width, height), self.thickness)
+        pygame.draw.rect(surface, tuple(self.color), ((self.p1.x, self.p1.y), (self.p2.x, self.p2.y)), self.thickness)
 
 
 ####################
@@ -209,6 +208,7 @@ class Viz:
 
         self._layers: dict[int, pygame.Surface] = {}
         self._kvs: dict[str, Graphics | Value] = {}
+        self._events: deque[Callable[['Viz'], None]] = deque()
 
     def clear_screen(self) -> None:
         self._layers.clear()
@@ -231,6 +231,9 @@ class Viz:
 
     def run(self) -> None:
         while self.running:
+            while self._events:
+                self._events.popleft()(self)
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
