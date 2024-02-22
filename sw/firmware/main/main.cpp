@@ -39,7 +39,7 @@ robot::esp32::Robot createRobot() {
             Servo(GPIO_NUM_0)
         ),
         RpLidar(
-            Serial(GPIO_NUM_1, GPIO_NUM_2, 115200, UART_NUM_1),
+            Serial(UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 115200, UART_NUM_0, 10240, 0),
             Pwm(GPIO_NUM_3, LEDC_CHANNEL_4, LEDC_TIMER_1)
         )
     );

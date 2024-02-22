@@ -21,21 +21,25 @@ void lidar(isLidar auto& lidar) {
 
     lidar.start();
 
-    std::cout << "Waiting for data" << std::endl;
-
-    std::this_thread::sleep_for(2s);
-
     std::cout << "Measurements:" << std::endl;
+    int samples = 30;
 
-    while (true) {
+    while (samples > 0) {
         auto measurement = lidar.getMeasurement();
         if (!measurement) {
-            break;
+            std::this_thread::sleep_for(1ms);
+            continue;
         }
-        std::cout << "  D: " << measurement->distance << " A: " << measurement->angle << std::endl;
+        std::cout << "  D: " << measurement->distance
+                  << " A: " << measurement->angle
+                  << " Q: " << static_cast<int>(measurement->quality)
+                  << std::endl;
+
+        --samples;
     }
 
     lidar.stop();
+    while (lidar.getMeasurement());
 
     std::cout << "---Lidar test complete---" << std::endl;
 }

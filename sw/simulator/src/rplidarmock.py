@@ -20,8 +20,8 @@ class RpLidarMock:
         self.port = port
         self.world = world
         self.rotpos = 0.       # the current rotation position
-        self.rps = 1          # rotations per second
-        self.samples = 34.    # samples per rotation
+        self.rps = 10          # rotations per second
+        self.samples = 340.    # samples per rotation
 
         self._last_sample = 0.  # the angle of the last sample
         self._scanning = False

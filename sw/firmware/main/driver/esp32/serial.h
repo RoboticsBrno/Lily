@@ -9,7 +9,7 @@ namespace driver::esp32 {
 class Serial {
     uart_port_t _uart;
 public:
-    Serial(gpio_num_t tx, gpio_num_t rx, int baudRate, uart_port_t uart):
+    Serial(int tx, int rx, int baudRate, uart_port_t uart, int rxBufferSize = 1024, int txBufferSize = 0):
         _uart(uart)
     {
         uart_config_t config {
@@ -24,7 +24,7 @@ public:
         uart_param_config(uart, &config);
 
         uart_set_pin(uart, tx, rx, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-        uart_driver_install(uart, 1024, 0, 0, nullptr, 0);
+        uart_driver_install(uart, rxBufferSize, txBufferSize, 0, nullptr, 0);
     }
 
     Serial(Serial const&) = delete;
