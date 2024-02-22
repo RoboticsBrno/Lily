@@ -23,7 +23,7 @@ void lidar(isLidar auto& lidar) {
 
     std::cout << "Waiting for data" << std::endl;
 
-    std::this_thread::sleep_for(1s);
+    std::this_thread::sleep_for(2s);
 
     std::cout << "Measurements:" << std::endl;
 
@@ -95,7 +95,7 @@ void encoder(isTickEncoder auto& encoder) {
 
     std::cout << "Reading encoder" << std::endl;
 
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 20; ++i) {
         auto [ ticks, overflow ] = encoder.getTicks();
         std::cout << "Ticks: " << ticks << " OF flag: ";
         switch (overflow) {
@@ -109,6 +109,7 @@ void encoder(isTickEncoder auto& encoder) {
                 std::cout << "Underflow";
                 break;
         }
+        std::cout << std::endl;
         encoder.resetOverflow();
         std::this_thread::sleep_for(200ms);
     }
@@ -122,29 +123,29 @@ void robot(isRobot auto& robot) {
 
     std::cout << "---Testing robot---" << std::endl;
 
-    std::cout << "Starting robot" << std::endl;
+    std::cout << "\nStarting robot" << std::endl;
     robot.start();
     std::this_thread::sleep_for(1s);
 
-    std::cout << "Motor left" << std::endl;
-    motor(robot.motorLeft);
+    std::cout << "\nMotor left" << std::endl;
+    motor(robot.motorLeft());
 
-    std::cout << "Motor right" << std::endl;
-    motor(robot.motorRight);
+    std::cout << "\nMotor right" << std::endl;
+    motor(robot.motorRight());
 
-    std::cout << "Encoder left" << std::endl;
-    encoder(robot.encoderLeft);
+    std::cout << "\nEncoder left" << std::endl;
+    encoder(robot.encoderLeft());
 
-    std::cout << "Encoder right" << std::endl;
-    encoder(robot.encoderRight);
+    std::cout << "\nEncoder right" << std::endl;
+    encoder(robot.encoderRight());
 
-    std::cout << "PincerCatcher" << std::endl;
-    pincerCatcher(robot.pincerCatcher);
+    std::cout << "\nPincerCatcher" << std::endl;
+    pincerCatcher(robot.pincerCatcher());
 
-    std::cout << "Lidar" << std::endl;
-    lidar(robot.lidar);
+    std::cout << "\nLidar" << std::endl;
+    lidar(robot.lidar());
 
-    std::cout << "Stopping robot" << std::endl;
+    std::cout << "\nStopping robot" << std::endl;
     robot.stop();
 
     std::this_thread::sleep_for(1s);

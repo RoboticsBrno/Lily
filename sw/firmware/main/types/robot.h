@@ -11,12 +11,12 @@ concept isRobot = requires(Robot robot) {
     robot.start();
     robot.stop();
 
-    { robot.motorLeft } -> isMotor;
-    { robot.motorRight } -> isMotor;
+    { robot.motorLeft() } -> isMotor;
+    { robot.motorRight() } -> isMotor;
 
-    { robot.encoderLeft } -> isTickEncoder;
-    { robot.encoderRight } -> isTickEncoder;
+    { robot.encoderLeft() } -> isTickEncoder;
+    { robot.encoderRight() } -> isTickEncoder;
 
-    { robot.pincerCatcher } -> isPincerCatcher;
-    { robot.lidar } -> isLidar;
+    { robot.pincerCatcher() } -> isPincerCatcher;
+    { robot.lidar() } -> isLidar;
 };

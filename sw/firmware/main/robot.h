@@ -26,18 +26,39 @@ using TickEncoder = typename driver::TickEncoder<Gpio>;
 using RpLidar = typename driver::RpLidar<Serial, Pwm>;
 
 
-struct Robot {
-    DRV8833 motorDriver;
+class Robot {
+    DRV8833 _motorDriver;
 
-    DRV8833Channel& motorLeft;
-    DRV8833Channel& motorRight;
+    TickEncoder _encoderLeft;
+    TickEncoder _encoderRight;
 
-    TickEncoder encoderLeft;
-    TickEncoder encoderRight;
+    PincerCatcher _pincerCatcher;
 
-    PincerCatcher pincerCatcher;
+    RpLidar _lidar;
 
-    RpLidar lidar;
+public:
+    DRV8833Channel& motorLeft() {
+        return _motorDriver[0];
+    }
+    DRV8833Channel& motorRight() {
+        return _motorDriver[1];
+    }
+
+    TickEncoder& encoderLeft() {
+        return _encoderLeft;
+    }
+
+    TickEncoder& encoderRight() {
+        return _encoderRight;
+    }
+
+    PincerCatcher& pincerCatcher() {
+        return _pincerCatcher;
+    }
+
+    RpLidar& lidar() {
+        return _lidar;
+    }
 
     Robot(
         DRV8833 motorDriver,
@@ -46,32 +67,30 @@ struct Robot {
         PincerCatcher pincerCatcher,
         RpLidar lidar
     ):
-        motorDriver(std::move(motorDriver)),
-        motorLeft(motorDriver[0]),
-        motorRight(motorDriver[1]),
-        encoderLeft(std::move(encoderLeft)),
-        encoderRight(std::move(encoderRight)),
-        pincerCatcher(std::move(pincerCatcher)),
-        lidar(std::move(lidar))
+        _motorDriver(std::move(motorDriver)),
+        _encoderLeft(std::move(encoderLeft)),
+        _encoderRight(std::move(encoderRight)),
+        _pincerCatcher(std::move(pincerCatcher)),
+        _lidar(std::move(lidar))
     {}
 
     Robot(Robot const&) = delete;
     Robot(Robot&& other) = delete;
 
     void start() {
-        motorDriver.start();
-        motorLeft.setPower(0);
-        motorRight.setPower(0);
+        _motorDriver.start();
+        motorLeft().setPower(0);
+        motorRight().setPower(0);
 
-        lidar.start();
+        _lidar.start();
     }
 
     void stop() {
-        motorDriver.sleep();
-        motorLeft.setPower(0);
-        motorRight.setPower(0);
+        _motorDriver.sleep();
+        motorLeft().setPower(0);
+        motorRight().setPower(0);
 
-        lidar.stop();
+        _lidar.stop();
     }
 };
 
