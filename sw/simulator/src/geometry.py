@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import math
-from typing import Optional, overload
+from typing import Optional, Union, overload
 from vizctl import VizCtl
 
 
@@ -41,7 +41,7 @@ class Point:
     @overload
     def __sub__(self, other: 'Vector') -> 'Point': ...
 
-    def __sub__(self, other: 'Point' | 'Vector') -> 'Point' | 'Vector':
+    def __sub__(self, other: Union['Point', 'Vector']) -> Union['Point', 'Vector']:
         if isinstance(other, Point):
             return Vector(self.x - other.x, self.y - other.y)
 
