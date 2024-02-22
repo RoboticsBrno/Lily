@@ -3,6 +3,7 @@
 
 
 #include "robot.h"
+#include "mockRobot.h"
 #include "types/robot.h"
 
 #include "logic/game.h"
@@ -47,6 +48,23 @@ robot::esp32::Robot createRobot() {
 
 
 auto lily = createRobot();
+robot::mock::Robot createMockRobot() {
+    using namespace robot::mock;
+
+    return Robot(
+        MotorsEncoders(
+            Serial(UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 115200, UART_NUM_0, 10240, 0)
+        ),
+        PincerCatcher(
+            Servo(GPIO_NUM_0),
+            Servo(GPIO_NUM_0)
+        ),
+        RpLidar(
+            Serial(UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 115200, UART_NUM_1, 10240, 0),
+            Pwm(GPIO_NUM_3, LEDC_CHANNEL_4, LEDC_TIMER_1)
+        )
+    );
+}
 
 
 int main() {

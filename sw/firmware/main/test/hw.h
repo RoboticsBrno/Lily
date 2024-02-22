@@ -14,7 +14,7 @@
 namespace test {
 
 
-void lidar(isLidar auto& lidar) {
+void lidar(isLidar auto&& lidar) {
     using namespace std::chrono_literals;
 
     std::cout << "---Testing lidar---" << std::endl;
@@ -45,7 +45,7 @@ void lidar(isLidar auto& lidar) {
 }
 
 
-void motor(isMotor auto& motor) {
+void motor(isMotor auto&& motor) {
     using namespace std::chrono_literals;
 
     std::cout << "---Testing motor---" << std::endl;
@@ -73,7 +73,7 @@ void motor(isMotor auto& motor) {
 }
 
 
-void pincerCatcher(isPincerCatcher auto& pincerCatcher) {
+void pincerCatcher(isPincerCatcher auto&& pincerCatcher) {
     using namespace std::chrono_literals;
 
     std::cout << "---Testing pincerCatcher---" << std::endl;
@@ -92,7 +92,7 @@ void pincerCatcher(isPincerCatcher auto& pincerCatcher) {
 }
 
 
-void encoder(isTickEncoder auto& encoder) {
+void encoder(isTickEncoder auto&& encoder) {
     using namespace std::chrono_literals;
 
     std::cout << "---Testing encoder---" << std::endl;
@@ -122,7 +122,7 @@ void encoder(isTickEncoder auto& encoder) {
 }
 
 
-void robot(isRobot auto& robot) {
+void robot(isRobot auto&& robot) {
     using namespace std::chrono_literals;
 
     std::cout << "---Testing robot---" << std::endl;

@@ -1,18 +1,5 @@
 from math import pi
-
-from geometry import Point, Vector
-from typing import Optional, Protocol
-
-
-class World(Protocol):
-    def get_pos(self) -> Point: ...
-    def get_heading(self) -> Vector: ...
-    def raycast(self, origin: Point, direction: Vector) -> Optional[tuple[Point, float, float]]: ...
-
-
-class Link(Protocol):
-    def read_all(self) -> bytes: ...
-    def write(self, data: bytes) -> int: ...
+from simtypes import Link, World
 
 
 class RpLidarMock:
@@ -29,7 +16,7 @@ class RpLidarMock:
         self._rx_buffer = b''
         self._new_round = False
 
-    def rx(self) -> None:
+    def _rx(self) -> None:
         data = self.port.read_all()
         self._rx_buffer += data
 
@@ -71,7 +58,7 @@ class RpLidarMock:
 
             self._rx_buffer = self._rx_buffer[to_slice:]
 
-    def tx(self, angle: float, distance: float, quality: int = 63) -> None:
+    def _tx(self, angle: float, distance: float, quality: int = 63) -> None:
         # TODO: clamp the angles earlier
         while angle < 0:
             angle += 2 * pi
@@ -114,7 +101,7 @@ class RpLidarMock:
 
         if not self._scanning:
             self._last_sample = self.rotpos
-            self.rx()
+            self._rx()
             return
 
         while self._last_sample < self.rotpos:
@@ -123,11 +110,11 @@ class RpLidarMock:
             hit = self.world.raycast(pos, direction)
             if hit is not None:
                 _, distance, refl_angle = hit
-                self.tx(direction.angle(), distance, 63)
+                self._tx(direction.angle(), distance, 63)
             else:
-                self.tx(direction.angle(), 0)
+                self._tx(direction.angle(), 0)
 
             self._first_sample = False
             self._last_sample = angle + 2 * pi / self.samples
 
-        self.rx()
+        self._rx()

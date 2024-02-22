@@ -3,7 +3,7 @@
 #include <tuple>
 
 #include "driver/tickEncoder.h"
-#include "driver/drv8833.h"
+#include "driver/mock/motorEncoder.h"
 #include "driver/rpLidar.h"
 
 #include "driver/esp32/gpio.h"
@@ -12,7 +12,7 @@
 #include "driver/esp32/serial.h"
 
 
-namespace robot::esp32 {
+namespace robot::mock {
 
 
 using Pwm = typename driver::esp32::Pwm;
@@ -21,36 +21,34 @@ using Servo = typename driver::esp32::Servo;
 using Serial = typename driver::esp32::Serial;
 using PincerCatcher = typename driver::esp32::PincerCatcher;
 
-using DRV8833 = typename driver::DRV8833<Pwm, Gpio>;
-using DRV8833Channel = typename driver::DRV8833Channel<Pwm>;
-using TickEncoder = typename driver::TickEncoder<Gpio>;
+using MotorsEncoders = typename driver::mock::MotorsEncoders<Serial>;
+using Motor = typename driver::mock::Motor<MotorsEncoders>;
+using Encoder = typename driver::mock::Encoder<MotorsEncoders>;
 using RpLidar = typename driver::RpLidar<Serial, Pwm>;
 
 
 class Robot {
-    DRV8833 _motorDriver;
-
-    TickEncoder _encoderLeft;
-    TickEncoder _encoderRight;
+    MotorsEncoders _motorsEncoders;
 
     PincerCatcher _pincerCatcher;
 
     RpLidar _lidar;
 
 public:
-    DRV8833Channel& motorLeft() {
-        return _motorDriver[0];
-    }
-    DRV8833Channel& motorRight() {
-        return _motorDriver[1];
+    Motor motorLeft() {
+        return _motorsEncoders.motorLeft();
     }
 
-    TickEncoder& encoderLeft() {
-        return _encoderLeft;
+    Motor motorRight() {
+        return _motorsEncoders.motorRight();
     }
 
-    TickEncoder& encoderRight() {
-        return _encoderRight;
+    Encoder& encoderLeft() {
+        return _motorsEncoders.encoderLeft();
+    }
+
+    Encoder& encoderRight() {
+        return _motorsEncoders.encoderRight();
     }
 
     PincerCatcher& pincerCatcher() {
@@ -62,15 +60,11 @@ public:
     }
 
     Robot(
-        DRV8833 motorDriver,
-        TickEncoder encoderLeft,
-        TickEncoder encoderRight,
+        MotorsEncoders motorsEncoders,
         PincerCatcher pincerCatcher,
         RpLidar lidar
     ):
-        _motorDriver(std::move(motorDriver)),
-        _encoderLeft(std::move(encoderLeft)),
-        _encoderRight(std::move(encoderRight)),
+        _motorsEncoders(std::move(motorsEncoders)),
         _pincerCatcher(std::move(pincerCatcher)),
         _lidar(std::move(lidar))
     {}
@@ -79,7 +73,6 @@ public:
     Robot(Robot&& other) = delete;
 
     void start() {
-        _motorDriver.start();
         motorLeft().setPower(0);
         motorRight().setPower(0);
 
@@ -87,7 +80,6 @@ public:
     }
 
     void stop() {
-        _motorDriver.sleep();
         motorLeft().setPower(0);
         motorRight().setPower(0);
 
