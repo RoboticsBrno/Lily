@@ -2,10 +2,10 @@
 
 #include <utility>
 
-#include "types/serial.h"
-#include "types/motor.h"
-#include "types/tickEncoder.h"
-#include "util/cobs.h"
+#include "../../types/serial.h"
+#include "../../types/motor.h"
+#include "../../types/tickEncoder.h"
+#include "../../util/cobs.h"
 
 
 namespace driver::mock {

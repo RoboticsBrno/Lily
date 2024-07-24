@@ -4,7 +4,7 @@
 #include <cmath>
 #include <string>
 
-#include "lmath.h"
+#include "./lmath.h"
 
 
 namespace linalg {

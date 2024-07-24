@@ -1,9 +1,9 @@
 #pragma once
 
-#include "math/geometry.h"
-#include "math/curves.h"
-#include "math/fixedPoint.h"
-#include "math/lmath.h"
+#include "../math/geometry.h"
+#include "../math/curves.h"
+#include "../math/fixedPoint.h"
+#include "../math/lmath.h"
 
 
 namespace logic {

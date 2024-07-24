@@ -1,7 +1,7 @@
 #pragma once
 
-#include "types/pwm.h"
-#include "types/gpio.h"
+#include "../types/pwm.h"
+#include "../types/gpio.h"
 
 
 namespace driver {

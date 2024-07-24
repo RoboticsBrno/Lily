@@ -2,14 +2,14 @@
 
 #include <tuple>
 
-#include "driver/tickEncoder.h"
-#include "driver/drv8833.h"
-#include "driver/rpLidar.h"
+#include "./driver/tickEncoder.h"
+#include "./driver/drv8833.h"
+#include "./driver/rpLidar.h"
 
-#include "driver/esp32/gpio.h"
-#include "driver/esp32/pwm.h"
-#include "driver/esp32/pincerCatcher.h"
-#include "driver/esp32/serial.h"
+#include "./driver/esp32/gpio.h"
+#include "./driver/esp32/pwm.h"
+#include "./driver/esp32/pincerCatcher.h"
+#include "./driver/esp32/serial.h"
 
 
 namespace robot::esp32 {

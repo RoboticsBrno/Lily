@@ -1,9 +1,9 @@
 #pragma once
 
-#include "motor.h"
-#include "lidar.h"
-#include "pincerCatcher.h"
-#include "tickEncoder.h"
+#include "./motor.h"
+#include "./lidar.h"
+#include "./pincerCatcher.h"
+#include "./tickEncoder.h"
 
 
 template<typename Robot>

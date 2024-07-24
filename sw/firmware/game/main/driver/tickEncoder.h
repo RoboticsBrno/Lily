@@ -3,8 +3,8 @@
 #include <utility>
 #include <tuple>
 
-#include "types/tickEncoder.h"
-#include "types/gpio.h"
+#include "../types/tickEncoder.h"
+#include "../types/gpio.h"
 
 
 namespace driver {

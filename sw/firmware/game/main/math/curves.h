@@ -3,8 +3,8 @@
 #include <optional>
 #include <memory>
 
-#include "geometry.h"
-#include "lmath.h"
+#include "./geometry.h"
+#include "./lmath.h"
 
 
 namespace linalg {

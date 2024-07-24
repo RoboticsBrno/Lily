@@ -1,8 +1,8 @@
 #pragma once
 
-#include "types/robot.h"
+#include "../types/robot.h"
 
-#include "core.h"
+#include "./core.h"
 
 namespace logic {
 

@@ -1,6 +1,7 @@
 ﻿build
 .vscode
+.cache
 managed_components
 dependencies.lock
 sdkconfig.old
-sdkconfig
+__*

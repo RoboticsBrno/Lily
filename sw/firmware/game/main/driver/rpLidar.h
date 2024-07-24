@@ -4,9 +4,9 @@
 #include <optional>
 #include <thread>
 
-#include "types/serial.h"
-#include "types/lidar.h"
-#include "types/pwm.h"
+#include "../types/serial.h"
+#include "../types/lidar.h"
+#include "../types/pwm.h"
 
 
 namespace driver {
@@ -18,8 +18,8 @@ class RpLidar {
     Pwm _motorControl;
 
 public:
-    using DistanceUnit = std::ratio<1, 64>;
-    using AngleUnit = std::ratio<1, 4>;
+    using DistanceUnit = std::ratio<1, 4>;
+    using AngleUnit = std::ratio<1, 64>;
 
 
     RpLidar(Serial serial, Pwm motorControl):
@@ -36,15 +36,19 @@ public:
     void start() {
         using namespace std::chrono_literals;
 
-        _motorControl.setDuty(100);
+        _motorControl.setDuty(1024);
 
         _serial.write(0xA5);  // start packet
         _serial.write(0x25);  // stop
-        std::this_thread::sleep_for(50ms);
+        std::this_thread::sleep_for(100ms);
 
         _serial.write(0xA5);  // start packet
         _serial.write(0x40);  // reset
-        std::this_thread::sleep_for(50ms);
+        std::this_thread::sleep_for(1000ms);
+
+        while (_serial.available() > 0) {
+            _serial.read();
+        }
 
         _serial.write(0xA5);  // start packet
         _serial.write(0x20);  // scan

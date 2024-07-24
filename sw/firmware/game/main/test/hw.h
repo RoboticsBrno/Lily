@@ -4,11 +4,11 @@
 #include <thread>
 #include <iostream>
 
-#include "types/lidar.h"
-#include "types/motor.h"
-#include "types/pincerCatcher.h"
-#include "types/tickEncoder.h"
-#include "types/robot.h"
+#include "../types/lidar.h"
+#include "../types/motor.h"
+#include "../types/pincerCatcher.h"
+#include "../types/tickEncoder.h"
+#include "../types/robot.h"
 
 
 namespace test {

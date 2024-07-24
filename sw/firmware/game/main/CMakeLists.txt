@@ -3,3 +3,5 @@ idf_component_register(
     INCLUDE_DIRS "."
     REQUIRES driver pthread spiffs vfs fatfs
 )
+
+target_compile_options(${COMPONENT_LIB} PRIVATE -fconcepts-diagnostics-depth=2)

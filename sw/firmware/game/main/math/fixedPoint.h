@@ -3,8 +3,8 @@
 #include <ratio>
 #include <cmath>
 
-#include "util/concepts.h"
-#include "lmath.h"
+#include "../util/concepts.h"
+#include "./lmath.h"
 
 
 namespace fp {
