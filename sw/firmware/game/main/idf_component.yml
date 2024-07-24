@@ -1,2 +1,5 @@
 dependencies:
-  idf: ">=5.1"
+  idf: ">=5.2.2"
+  Esp32-DCMotor:
+    git: https://github.com/RoboticsBrno/Esp32-DCMotor.git
+    version: v0.0.2

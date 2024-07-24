@@ -7,7 +7,6 @@
 #include "../types/lidar.h"
 #include "../types/motor.h"
 #include "../types/pincerCatcher.h"
-#include "../types/tickEncoder.h"
 #include "../types/robot.h"
 
 
@@ -50,26 +49,47 @@ void motor(isMotor auto&& motor) {
 
     std::cout << "---Testing motor---" << std::endl;
 
-    std::cout << "Setting power to 0" << std::endl;
+    std::cout << "Stopping motor" << std::endl;
 
-    motor.setPower(0);
+    motor.stop(true);
     std::this_thread::sleep_for(1s);
 
     std::cout << "Setting power to 100 (forward)" << std::endl;
+    motor.moveInfinite();
 
-    motor.setPower(100);
+    motor.setSpeed(300);
     std::this_thread::sleep_for(1s);
 
     std::cout << "Setting power to -100 (backward)" << std::endl;
 
-    motor.setPower(-100);
+    motor.setSpeed(-300);
     std::this_thread::sleep_for(1s);
 
     std::cout << "Setting power to 0" << std::endl;
 
-    motor.setPower(0);
+    motor.stop(false);
 
     std::cout << "---Motor test complete---" << std::endl;
+}
+
+
+void encoder(isMotor auto&& motor) {
+    using namespace std::chrono_literals;
+
+    std::cout << "---Testing encoder---" << std::endl;
+
+    std::cout << "Disabling motor" << std::endl;
+    motor.stop(false);
+
+    std::cout << "Reading encoder" << std::endl;
+
+    for (int i = 0; i < 20; ++i) {
+        auto ticks = motor.getPosition();
+        std::cout << "Ticks: " << ticks << std::endl;
+        std::this_thread::sleep_for(200ms);
+    }
+
+    std::cout << "---Encoder test complete---" << std::endl;
 }
 
 
@@ -92,36 +112,6 @@ void pincerCatcher(isPincerCatcher auto&& pincerCatcher) {
 }
 
 
-void encoder(isTickEncoder auto&& encoder) {
-    using namespace std::chrono_literals;
-
-    std::cout << "---Testing encoder---" << std::endl;
-
-    std::cout << "Reading encoder" << std::endl;
-
-    for (int i = 0; i < 20; ++i) {
-        auto [ ticks, overflow ] = encoder.getTicks();
-        std::cout << "Ticks: " << ticks << " OF flag: ";
-        switch (overflow) {
-            case OverflowFlag::None:
-                std::cout << "None";
-                break;
-            case OverflowFlag::Overflow:
-                std::cout << "Overflow";
-                break;
-            case OverflowFlag::Underflow:
-                std::cout << "Underflow";
-                break;
-        }
-        std::cout << std::endl;
-        encoder.resetOverflow();
-        std::this_thread::sleep_for(200ms);
-    }
-
-    std::cout << "---Encoder test complete---" << std::endl;
-}
-
-
 void robot(isRobot auto&& robot) {
     using namespace std::chrono_literals;
 
@@ -138,10 +128,10 @@ void robot(isRobot auto&& robot) {
     motor(robot.motorRight());
 
     std::cout << "\nEncoder left" << std::endl;
-    encoder(robot.encoderLeft());
+    encoder(robot.motorLeft());
 
     std::cout << "\nEncoder right" << std::endl;
-    encoder(robot.encoderRight());
+    encoder(robot.motorRight());
 
     std::cout << "\nPincerCatcher" << std::endl;
     pincerCatcher(robot.pincerCatcher());

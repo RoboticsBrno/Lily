@@ -2,8 +2,7 @@
 
 #include <tuple>
 
-#include "driver/tickEncoder.h"
-#include "driver/mock/motorEncoder.h"
+#include "driver/mock/motors.h"
 #include "driver/rpLidar.h"
 
 #include "driver/esp32/gpio.h"
@@ -22,8 +21,7 @@ using Serial = typename driver::esp32::Serial;
 using PincerCatcher = typename driver::esp32::PincerCatcher;
 
 using MotorsEncoders = typename driver::mock::MotorsEncoders<Serial>;
-using Motor = typename driver::mock::Motor<MotorsEncoders>;
-using Encoder = typename driver::mock::Encoder<MotorsEncoders>;
+using Motor = typename driver::mock::DcMotor<MotorsEncoders>;
 using RpLidar = typename driver::RpLidar<Serial, Pwm>;
 
 
@@ -35,20 +33,12 @@ class Robot {
     RpLidar _lidar;
 
 public:
-    Motor motorLeft() {
+    Motor& motorLeft() {
         return _motorsEncoders.motorLeft();
     }
 
-    Motor motorRight() {
+    Motor& motorRight() {
         return _motorsEncoders.motorRight();
-    }
-
-    Encoder& encoderLeft() {
-        return _motorsEncoders.encoderLeft();
-    }
-
-    Encoder& encoderRight() {
-        return _motorsEncoders.encoderRight();
     }
 
     PincerCatcher& pincerCatcher() {
@@ -73,15 +63,15 @@ public:
     Robot(Robot&& other) = delete;
 
     void start() {
-        motorLeft().setPower(0);
-        motorRight().setPower(0);
+        motorLeft().stop(false);
+        motorRight().stop(false);
 
         _lidar.start();
     }
 
     void stop() {
-        motorLeft().setPower(0);
-        motorRight().setPower(0);
+        motorLeft().stop(false);
+        motorRight().stop(false);
 
         _lidar.stop();
     }
