@@ -15,7 +15,6 @@
 namespace robot::esp32 {
 
 
-using Gpio = typename driver::esp32::Gpio;
 using Pwm = typename driver::esp32::Pwm;
 using Servo = typename driver::esp32::Servo;
 using Serial = typename driver::esp32::Serial;
@@ -29,7 +28,6 @@ class Robot {
 
     std::unique_ptr<DCMotor> _motorLeft;
     std::unique_ptr<DCMotor> _motorRight;
-    Gpio _drvEnable;
 
     PincerCatcher _pincerCatcher;
     RpLidar _lidar;
@@ -55,13 +53,11 @@ public:
     Robot(
         std::unique_ptr<DCMotor> motorLeft,
         std::unique_ptr<DCMotor> motorRight,
-        Gpio drvEnable,
         PincerCatcher pincerCatcher,
         RpLidar lidar
     ):
         _motorLeft(std::move(motorLeft)),
         _motorRight(std::move(motorRight)),
-        _drvEnable(std::move(drvEnable)),
         _pincerCatcher(std::move(pincerCatcher)),
         _lidar(std::move(lidar))
     {}
@@ -70,8 +66,6 @@ public:
     Robot(Robot&& other) = delete;
 
     void start() {
-        _drvEnable.setDirection(Gpio::Direction::Output);
-        _drvEnable.write(true);
 
         motorLeft().startTicker();
         motorRight().startTicker();
@@ -84,7 +78,6 @@ public:
     }
 
     void stop() {
-        _drvEnable.write(false);
         motorLeft().stop(false);
         motorRight().stop(false);
 

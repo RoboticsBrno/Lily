@@ -21,16 +21,15 @@ static inline auto createRobot() {
     ledc_timer_config(&timer_conf);
 
     return Robot(
-        std::make_unique<DCMotor>(GPIO_NUM_11, GPIO_NUM_12, GPIO_NUM_39, GPIO_NUM_40, 30, LEDC_TIMER_0, LEDC_CHANNEL_0, LEDC_CHANNEL_1),
-        std::make_unique<DCMotor>(GPIO_NUM_45, GPIO_NUM_13, GPIO_NUM_42, GPIO_NUM_41, 30, LEDC_TIMER_0, LEDC_CHANNEL_2, LEDC_CHANNEL_3),
-        Gpio(GPIO_NUM_18),
+        std::make_unique<DCMotor>(GPIO_NUM_3, GPIO_NUM_46, GPIO_NUM_15, GPIO_NUM_7, 30, LEDC_TIMER_0, LEDC_CHANNEL_0, LEDC_CHANNEL_1),
+        std::make_unique<DCMotor>(GPIO_NUM_5, GPIO_NUM_6, GPIO_NUM_1, GPIO_NUM_2, 30, LEDC_TIMER_0, LEDC_CHANNEL_2, LEDC_CHANNEL_3),
         PincerCatcher(
             Servo(GPIO_NUM_NC),
             Servo(GPIO_NUM_NC)
         ),
         RpLidar(
             Serial(GPIO_NUM_9, GPIO_NUM_17, 115200, UART_NUM_1, 10240, 0),
-            Pwm(GPIO_NUM_1, LEDC_CHANNEL_4, LEDC_TIMER_0)
+            Pwm(GPIO_NUM_12, LEDC_CHANNEL_4, LEDC_TIMER_0)
         )
     );
 }

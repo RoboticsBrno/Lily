@@ -26,7 +26,7 @@ void lidar(isLidar auto&& lidar) {
     while (samples > 0) {
         auto measurement = lidar.getMeasurement();
         if (!measurement) {
-            std::this_thread::sleep_for(1ms);
+            std::this_thread::sleep_for(10ms);
             continue;
         }
         std::cout << "  D: " << measurement->distance
@@ -57,12 +57,12 @@ void motor(isMotor auto&& motor) {
     std::cout << "Setting power to 100 (forward)" << std::endl;
     motor.moveInfinite();
 
-    motor.setSpeed(300);
+    motor.setSpeed(2000);
     std::this_thread::sleep_for(1s);
 
     std::cout << "Setting power to -100 (backward)" << std::endl;
 
-    motor.setSpeed(-300);
+    motor.setSpeed(-2000);
     std::this_thread::sleep_for(1s);
 
     std::cout << "Setting power to 0" << std::endl;
