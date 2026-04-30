@@ -21,6 +21,7 @@ from util.remote_control_common import (
     build_keyboard_controller,
     build_localization_stack,
     create_default_bear,
+    draw_bear,
     draw_bear_detection,
     draw_candidate_points,
     draw_estimated_pose,
@@ -109,6 +110,7 @@ def main() -> None:
         # Visualization
 
         visualizer.draw(world, color=(224, 228, 236))
+        draw_bear(visualizer, bear)
 
         heading_length = ROBOT_BODY_RADIUS
         robot_center = Point(truth.x, truth.y)

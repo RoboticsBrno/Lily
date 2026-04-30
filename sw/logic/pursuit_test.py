@@ -23,6 +23,7 @@ from sim.server import create_server_from_map
 from util.remote_control_common import (
     build_localization_stack,
     create_default_bear,
+    draw_bear,
     draw_bear_detection,
     draw_candidate_points,
     draw_estimated_pose,
@@ -306,6 +307,7 @@ def main() -> None:
         estimated, bear_detection = pursuit_state_machine.process_tick(measurements)
 
         visualizer.draw(world, color=(224, 228, 236), width_px=3)
+        draw_bear(visualizer, bear)
         _draw_path(visualizer, pursuit_state_machine.planned_path)
         robot_center = Point(truth.x, truth.y)
         heading_tip = Point(

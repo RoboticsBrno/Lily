@@ -12,6 +12,7 @@ from util.remote_control_common import (
     build_localization_stack,
     build_replay_player,
     create_default_bear,
+    draw_bear,
     draw_bear_detection,
     draw_candidate_points,
     draw_estimated_pose,
@@ -66,6 +67,7 @@ def main() -> None:
 
         # Visualization
         visualizer.draw(world, color=(224, 228, 236))
+        draw_bear(visualizer, bear)
         # print(f"Estimated pose: {estimated.x:.2f}, {estimated.y:.2f}, {estimated.yaw:.2f}")
 
         draw_estimated_pose(visualizer, estimated, ROBOT_BODY_RADIUS)

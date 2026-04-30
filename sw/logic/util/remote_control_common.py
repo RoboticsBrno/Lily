@@ -273,6 +273,19 @@ def draw_bear_detection(visualizer: Visualizer, bear_detection: Any, estimated: 
     )
 
 
+def draw_bear(visualizer: Visualizer, bear: Circle) -> None:
+    visualizer.draw(
+        Circle(center=bear.center, radius=bear.radius),
+        color=(190, 140, 70),
+        width_px=2,
+    )
+    visualizer.draw(
+        bear.center,
+        color=(255, 220, 160),
+        point_radius_px=3,
+    )
+
+
 def draw_candidate_points(visualizer: Visualizer, bear_detector: BearDetector) -> None:
     for reverse_candidates in bear_detector._candidate_points:
         for point in reverse_candidates:
