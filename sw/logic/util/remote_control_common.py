@@ -163,7 +163,6 @@ def process_measurements(
 ) -> tuple[Pose, Any]:
     for measurement in controller.get_measurements():
         localizer.update(measurement)
-        print(f"Estimated pose: {measurement.encoders.left_ticks:.2f} ticks left, {measurement.encoders.right_ticks:.2f} ticks right")
         estimated_pose = localizer.estimate_pose()
 
         feature_points = bear_detector.update(estimated_pose, measurement.lidar)

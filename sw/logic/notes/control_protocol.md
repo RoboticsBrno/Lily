@@ -10,7 +10,8 @@ Each packet is a raw byte frame with this layout:
 - `start`: `0xA5`
 - `nonce`: `uint8`
 - `size`: `uint16` (payload size)
-- `header_checksum`: CRC-8 over the first 4 header bytes (`start`, `nonce`, `size_low`, `size_high`)
+- `data_checksum`: CRC-8 over the payload bytes
+- `header_checksum`: CRC-8 over the first 5 header bytes (`start`, `nonce`, `size_low`, `size_high`, `data_checksum`)
 - `payload`: `size` bytes
 
 The header checksum uses CRC-8 with polynomial `0x07`, initial value `0x00`, and no final xor. Payload bytes are not checksummed by the header.

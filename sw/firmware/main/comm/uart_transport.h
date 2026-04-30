@@ -31,14 +31,14 @@ public:
 private:
     static constexpr uint8_t FRAME_INIT = 0xA5;
     static constexpr unsigned MAX_PAYLOAD_SIZE = 2048;
-    static constexpr unsigned HEADER_SIZE = 5;
+    static constexpr unsigned HEADER_SIZE = 6;
 
     uart_port_t _uart;
     ReceiveCallback _receiveCallback;
     uint8_t _txNonce = 0;
 
-    static uint8_t computeHeaderChecksum(std::span<const uint8_t> header) {
-        return esp_rom_crc8_be(0, header.data(), header.size());
+    static uint8_t computeChecksum(std::span<const uint8_t> data) {
+        return esp_rom_crc8_be(0, data.data(), data.size());
     }
 
     bool readExact(uint8_t* buffer, size_t size) {
@@ -59,9 +59,6 @@ private:
 
         while (true) {
             if (!readExact(&initByte, 1) || initByte != FRAME_INIT) {
-                if (initByte != FRAME_INIT) {
-                    ESP_LOGD(UART_TRANSPORT_LOG_TAG, "Dropped byte 0x%02X while seeking frame start", initByte);
-                }
                 continue;
             }
 
@@ -75,10 +72,12 @@ private:
 
             uint8_t nonce = 0;
             uint16_t size = 0;
+            uint8_t payloadChecksum = 0;
             uint8_t headerChecksum = 0;
 
             if (!readLe(headerSpan, offset, nonce) ||
                 !readLe(headerSpan, offset, size) ||
+                !readLe(headerSpan, offset, payloadChecksum) ||
                 !readLe(headerSpan, offset, headerChecksum)) {
                 ESP_LOGW(UART_TRANSPORT_LOG_TAG, "Failed to decode frame header");
                 continue;
@@ -89,8 +88,9 @@ private:
                 nonce,
                 static_cast<uint8_t>(size & 0xFF),
                 static_cast<uint8_t>((size >> 8) & 0xFF),
+                payloadChecksum,
             } };
-            if (headerChecksum != computeHeaderChecksum(std::span<const uint8_t>(checksumHeader.data(), checksumHeader.size()))) {
+            if (headerChecksum != computeChecksum(std::span<const uint8_t>(checksumHeader.data(), checksumHeader.size()))) {
                 ESP_LOGW(UART_TRANSPORT_LOG_TAG, "Header checksum mismatch");
                 continue;
             }
@@ -103,6 +103,11 @@ private:
             std::vector<uint8_t> payload(size);
             if (size > 0 && !readExact(payload.data(), payload.size())) {
                 ESP_LOGW(UART_TRANSPORT_LOG_TAG, "Failed to read payload bytes size=%u", size);
+                continue;
+            }
+
+            if (payloadChecksum != computeChecksum(std::span<const uint8_t>(payload.data(), payload.size()))) {
+                ESP_LOGW(UART_TRANSPORT_LOG_TAG, "Payload checksum mismatch");
                 continue;
             }
 
@@ -154,7 +159,8 @@ public:
         appendLe<uint8_t>(header, FRAME_INIT);
         appendLe<uint8_t>(header, _txNonce);
         appendLe<uint16_t>(header, payload.size());
-        const uint8_t checksum = computeHeaderChecksum(std::span<const uint8_t>(header.data(), header.size()));
+        appendLe<uint8_t>(header, computeChecksum(payload));
+        const uint8_t checksum = computeChecksum(std::span<const uint8_t>(header.data(), header.size()));
         appendLe<uint8_t>(header, checksum);
 
         uart_write_bytes(_uart, reinterpret_cast<const char*>(header.data()), header.size());

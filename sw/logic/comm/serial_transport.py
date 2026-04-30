@@ -12,9 +12,9 @@ from .types import MessageCallback, Transport
 
 class SerialTransport(Transport):
     _FRAME_INIT = 0xA5
-    _HEADER_SIZE = 5
+    _HEADER_SIZE = 6
     _MAX_PAYLOAD_SIZE = 2048
-    _HEADER_CRC = Calculator(  # Matches raw esp_rom_crc8_be(0, ...) behavior.
+    _CRC = Calculator(  # Matches raw esp_rom_crc8_be(0, ...) behavior.
         Configuration(
             width=8,
             polynomial=0x07,
@@ -108,18 +108,21 @@ class SerialTransport(Transport):
         if header is None:
             return None
 
-        nonce, size, checksum = struct.unpack("<BHB", header)
+        nonce, size, data_checksum, checksum = struct.unpack("<BHBB", header)
         if size > self._MAX_PAYLOAD_SIZE:
             return None
 
-        expected_checksum = self._compute_header_checksum(
-            bytes((self._FRAME_INIT, nonce)) + struct.pack("<H", size)
+        expected_checksum = self._compute_checksum(
+            bytes((self._FRAME_INIT, nonce)) + struct.pack("<H", size) + bytes((data_checksum,))
         )
         if checksum != expected_checksum:
             return None
 
         payload = self._read_exact(size)
         if payload is None:
+            return None
+
+        if self._compute_checksum(payload) != data_checksum:
             return None
         return payload
 
@@ -137,10 +140,15 @@ class SerialTransport(Transport):
 
     @classmethod
     def _frame_payload(cls, nonce: int, payload: bytes) -> bytes:
-        header_without_checksum = bytes((cls._FRAME_INIT, nonce & 0xFF)) + struct.pack("<H", len(payload))
-        checksum = cls._compute_header_checksum(header_without_checksum)
+        data_checksum = cls._compute_checksum(payload)
+        header_without_checksum = (
+            bytes((cls._FRAME_INIT, nonce & 0xFF))
+            + struct.pack("<H", len(payload))
+            + bytes((data_checksum,))
+        )
+        checksum = cls._compute_checksum(header_without_checksum)
         return header_without_checksum + bytes((checksum,)) + payload
 
     @staticmethod
-    def _compute_header_checksum(data: bytes) -> int:
-        return SerialTransport._HEADER_CRC.checksum(data)
+    def _compute_checksum(data: bytes) -> int:
+        return SerialTransport._CRC.checksum(data)
