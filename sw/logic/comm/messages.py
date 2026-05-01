@@ -13,8 +13,8 @@ class ClawAction(str, Enum):
 
 @dataclass
 class MoveCommand:
-    left_power: float
-    right_power: float
+    left_speed: float
+    right_speed: float
 
 
 @dataclass

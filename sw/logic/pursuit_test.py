@@ -47,6 +47,7 @@ PURSUIT_LOOKAHEAD = 0.18
 COMMAND_SCALE = 0.5
 GOAL_TOLERANCE_M = 0.08
 MIN_BEAR_DIAMETER_M = 0.10
+MAX_SPEED = 1
 
 RETRIEVE_BLINDSPOT_RANGE = 0.5 * pi
 RETRIEVE_BLINDSPOT_OFFSET = 0
@@ -126,13 +127,13 @@ class PursuitStateMachine:
         return hypot(goal.x - estimated.x, goal.y - estimated.y) <= GOAL_TOLERANCE_M
 
     def _stop_command(self) -> MoveCommand:
-        return MoveCommand(left_power=0.0, right_power=0.0)
+        return MoveCommand(left_speed=0, right_speed=0)
 
     def _follow_path(self, estimated) -> MoveCommand:
         control = self.pursuit.compute(estimated)
         return MoveCommand(
-            left_power=_clamp(control.left_speed * COMMAND_SCALE),
-            right_power=_clamp(control.right_speed * COMMAND_SCALE),
+            left_speed=_clamp_scale(control.left_power, -1, 1, MAX_SPEED),
+            right_speed=_clamp_scale(control.right_power, -1, 1, MAX_SPEED),
         )
 
     def _loop(self, estimated, bear_detection) -> None:
@@ -217,8 +218,8 @@ def _draw_path(visualizer: Visualizer, path: list[Point]) -> None:
         visualizer.draw(p, color=(190, 220, 255), point_radius_px=3)
 
 
-def _clamp(value: float, low: float = -1.0, high: float = 1.0) -> float:
-    return max(low, min(high, value))
+def _clamp_scale(value: float, low: float = -1.0, high: float = 1.0, scale: float = 1.0) -> float:
+    return max(low, min(high, value)) * scale
 
 
 def main() -> None:
@@ -241,7 +242,7 @@ def main() -> None:
         ),
         motor_config=MotorConfig(
             ticks_per_meter=1000.0,
-            max_speed=0.7,
+            max_speed=MAX_SPEED,
         ),
         bear=bear,
         transport=UdpTransport(
@@ -251,7 +252,6 @@ def main() -> None:
         ),
         publish_hz=30.0,
     )
-    server.start()
 
     controller = Controller(
         transport=RecordingTransport(
@@ -331,12 +331,13 @@ def main() -> None:
     visualizer.on_tick = on_tick
     visualizer.on_event = on_event
 
+    server.start()
     controller.start()
     controller.send_command(SubscribeCommand())
     try:
         visualizer.run(target_fps=max(1, TARGET_FPS))
     finally:
-        controller.send_command(MoveCommand(left_power=0.0, right_power=0.0))
+        controller.send_command(MoveCommand(left_speed=0, right_speed=0))
         controller.stop()
         server.stop()
 

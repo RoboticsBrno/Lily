@@ -16,8 +16,8 @@ enum class CommandType {
 
 struct Command {
     CommandType type = CommandType::Subscribe;
-    float leftPower = 0.0f;
-    float rightPower = 0.0f;
+    int16_t leftSpeed = 0;
+    int16_t rightSpeed = 0;
     bool clawOpen = false;
 };
 

@@ -62,28 +62,25 @@ class MotorSimulator:
 
         self._left_tick_position = 0.0
         self._right_tick_position = 0.0
-        self._left_power = 0.0
-        self._right_power = 0.0
+        self._left_speed = 0.0
+        self._right_speed = 0.0
 
-    def set_motor_power(self, left_power: float, right_power: float) -> None:
-        self._left_power = _clamp(left_power, -1.0, 1.0)
-        self._right_power = _clamp(right_power, -1.0, 1.0)
+    def set_motor_speed(self, left_speed: float, right_speed: float) -> None:
+        self._left_speed = _clamp(left_speed, -self.config.max_speed, self.config.max_speed)
+        self._right_speed = _clamp(right_speed, -self.config.max_speed, self.config.max_speed)
 
     def step(self, dt: float, timestamp_ms: int) -> tuple[float, float, EncodersMeasurement]:
         if dt < 0.0:
             raise ValueError("dt must be non-negative")
 
-        left_speed = self._left_power * self.config.max_speed
-        right_speed = self._right_power * self.config.max_speed
-
-        self._left_tick_position += left_speed * dt * self.config.ticks_per_meter
-        self._right_tick_position += right_speed * dt * self.config.ticks_per_meter
+        self._left_tick_position += self._left_speed * dt * self.config.ticks_per_meter
+        self._right_tick_position += self._right_speed * dt * self.config.ticks_per_meter
 
         encoder = EncodersMeasurement(
             left_ticks=int(round(self._left_tick_position)),
             right_ticks=int(round(self._right_tick_position)),
         )
-        return left_speed, right_speed, encoder
+        return self._left_speed, self._right_speed, encoder
 
 
 class LidarSensorSimulator:

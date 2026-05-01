@@ -26,8 +26,8 @@ Each command payload starts with a `type` byte that specifies the command type.
 Payload bytes:
 
 - `type`: `uint8` (value = `1`)
-- `left_power`: `float32`
-- `right_power`: `float32`
+- `left_speed`: `int16` (mm/s)
+- `right_speed`: `int16` (mm/s)
 
 #### Claw command
 
@@ -72,12 +72,10 @@ Each command is a JSON object with a `command` field specifying the type of comm
 ```json
 {
   "command": "move",
-  "left_power": 0.5,
-  "right_power": 0.5
+  "left_speed": 600,  // mm/s
+  "right_speed": 600
 }
 ```
-
-- `left_power` and `right_power` are floats in the range `[-1.0, 1.0]` representing the power applied to the left and right motors respectively.
 
 
 #### Claw command

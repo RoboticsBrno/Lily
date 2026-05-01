@@ -71,23 +71,17 @@ extern "C" void app_main() {
 
         switch (command->type) {
             case comm::CommandType::Move: {
-                constexpr int maxTicksPerSecond = 1200;
-                const float leftPower = std::clamp(command->leftPower, -1.0f, 1.0f);
-                const float rightPower = std::clamp(command->rightPower, -1.0f, 1.0f);
+                lily.motorLeft().setSpeed(command->leftSpeed);
+                lily.motorRight().setSpeed(command->rightSpeed);
 
-                const int leftSpeed = std::round(leftPower * maxTicksPerSecond);
-                const int rightSpeed = std::round(rightPower * maxTicksPerSecond);
-                lily.motorLeft().setSpeed(leftSpeed);
-                lily.motorRight().setSpeed(rightSpeed);
-
-                if (leftSpeed == 0) {
+                if (command->leftSpeed == 0) {
                     lily.motorLeft().stop(false);
                 }
                 else {
                     lily.motorLeft().moveInfinite();
                 }
 
-                if (rightSpeed == 0) {
+                if (command->rightSpeed == 0) {
                     lily.motorRight().stop(false);
                 }
                 else {
@@ -116,7 +110,7 @@ extern "C" void app_main() {
     int64_t lastMeasurementUs = 0;
 
     while (true) {
-        const int64_t nowUs = esp_timer_get_time();
+        int64_t nowUs = esp_timer_get_time();
         if (subscribed && nowUs - lastMeasurementUs >= 50 * 1000) {
             lastMeasurementUs = nowUs;
 
@@ -141,7 +135,7 @@ extern "C" void app_main() {
                 .rightTicks = static_cast<int32_t>(lily.motorRight().getPosition()),
             };
 
-            const auto payload = comm::BinarySerializer::serializeMeasurements(measurements);
+            auto payload = comm::BinarySerializer::serializeMeasurements(measurements);
             transport.send(std::span<const uint8_t>(payload));
         }
 

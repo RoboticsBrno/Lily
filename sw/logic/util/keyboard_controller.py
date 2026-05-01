@@ -19,6 +19,7 @@ class KeyboardRobotController:
         controller: Controller,
         move_power: float = 1.0,
         turn_power: float = 0.75,
+        max_speed: float = 1.2,
         max_measurements: int = 256,
     ) -> None:
         if move_power < 0.0:
@@ -30,6 +31,7 @@ class KeyboardRobotController:
 
         self.move_power = move_power
         self.turn_power = turn_power
+        self._max_speed = max_speed
 
         self._queue: Queue[Measurements] = Queue(maxsize=max_measurements)
         self._controller = controller
@@ -105,7 +107,7 @@ class KeyboardRobotController:
         self._backward = False
         self._left = False
         self._right = False
-        self._send_move(0.0, 0.0)
+        self._send_move(0, 0)
 
     def get_measurements(self, max_items: Optional[int] = None) -> list[Measurements]:
         if max_items is not None and max_items <= 0:
@@ -134,18 +136,16 @@ class KeyboardRobotController:
         left_power = linear * self.move_power - turn * self.turn_power
         right_power = linear * self.move_power + turn * self.turn_power
 
-        self._send_move(self._clamp(left_power), self._clamp(right_power))
+        self._send_move(self._clamp_scale(left_power), self._clamp_scale(right_power))
 
-    def _send_move(self, left_power: float, right_power: float) -> None:
-        rounded = (round(left_power, 6), round(right_power, 6))
-        if rounded == self._last_move:
+    def _send_move(self, left_speed: int, right_speed: int) -> None:
+        if (left_speed, right_speed) == self._last_move:
             return
 
         self._controller.send_command(
-            MoveCommand(left_power=rounded[0], right_power=rounded[1])
+            MoveCommand(left_speed=left_speed, right_speed=right_speed)
         )
-        self._last_move = rounded
+        self._last_move = (left_speed, right_speed)
 
-    @staticmethod
-    def _clamp(value: float, low: float = -1.0, high: float = 1.0) -> float:
-        return max(low, min(high, value))
+    def _clamp_scale(self, value: float, low: float = -1.0, high: float = 1.0) -> int:
+        return round(max(low, min(high, value)) * self._max_speed)

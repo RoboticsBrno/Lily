@@ -22,7 +22,7 @@ class BinarySerializer:
     @staticmethod
     def serialize_command(command: Command) -> bytes:
         if isinstance(command, MoveCommand):
-            payload = struct.pack("<Bff", BinarySerializer._COMMAND_MOVE, command.left_power, command.right_power)
+            payload = struct.pack("<Bhh", BinarySerializer._COMMAND_MOVE, round(command.left_speed * 1000), round(command.right_speed * 1000))
             return payload
 
         if isinstance(command, ClawCommand):
@@ -46,8 +46,8 @@ class BinarySerializer:
         body = data[1:]
 
         if command_type == BinarySerializer._COMMAND_MOVE:
-            left_power, right_power = struct.unpack("<ff", body)
-            return MoveCommand(left_power=left_power, right_power=right_power)
+            left_speed, right_speed = struct.unpack("<hh", body)
+            return MoveCommand(left_speed=left_speed / 1000, right_speed=right_speed / 1000)
 
         if command_type == BinarySerializer._COMMAND_CLAW:
             (raw_action,) = struct.unpack("<B", body)

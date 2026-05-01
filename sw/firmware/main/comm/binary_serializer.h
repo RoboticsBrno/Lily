@@ -31,10 +31,10 @@ public:
         if (commandType == COMMAND_MOVE) {
             Command command;
             command.type = CommandType::Move;
-            if (!readLe(data, offset, command.leftPower)) {
+            if (!readLe(data, offset, command.leftSpeed)) {
                 return std::nullopt;
             }
-            if (!readLe(data, offset, command.rightPower)) {
+            if (!readLe(data, offset, command.rightSpeed)) {
                 return std::nullopt;
             }
             if (offset != data.size()) {

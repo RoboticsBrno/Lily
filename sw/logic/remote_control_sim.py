@@ -69,7 +69,6 @@ def main() -> None:
         ),
         publish_hz=30.0,
     )
-    server.start()
 
     controller = build_keyboard_controller(
         UdpTransport(
@@ -134,6 +133,7 @@ def main() -> None:
     visualizer.on_tick = on_tick
     visualizer.on_event = on_event
 
+    server.start()
     controller.start()
     try:
         visualizer.run(target_fps=max(1, TARGET_FPS))

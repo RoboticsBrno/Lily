@@ -97,9 +97,9 @@ class DifferentialDriveRobotSimulator:
 
     def handle_command(self, command: Command) -> None:
         if isinstance(command, MoveCommand):
-            self.motor.set_motor_power(
-                left_power=command.left_power,
-                right_power=command.right_power,
+            self.motor.set_motor_speed(
+                left_speed=command.left_speed,
+                right_speed=command.right_speed,
             )
         elif isinstance(command, ClawCommand):
             self.claw_open = command.action.value == "open"

@@ -18,8 +18,8 @@ class JsonSerializer:
         if isinstance(command, MoveCommand):
             return json.dumps({
                 "command": "move",
-                "left_power": command.left_power,
-                "right_power": command.right_power,
+                "left_speed": command.left_speed,
+                "right_speed": command.right_speed,
             }).encode("utf-8")
         elif isinstance(command, ClawCommand):
             return json.dumps({
@@ -41,8 +41,8 @@ class JsonSerializer:
 
         if command_type == "move":
             return MoveCommand(
-                left_power=d["left_power"],
-                right_power=d["right_power"],
+                left_speed=d["left_speed"],
+                right_speed=d["right_speed"],
             )
         elif command_type == "claw":
             return ClawCommand(

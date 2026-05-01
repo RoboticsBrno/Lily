@@ -14,8 +14,8 @@ class PurePursuitConfig:
 
 @dataclass(frozen=True)
 class PurePursuitOutput:
-    left_speed: float
-    right_speed: float
+    left_power: float
+    right_power: float
 
 
 class PurePursuitController:
@@ -45,9 +45,9 @@ class PurePursuitController:
         reverse_angle = wrap_angle(forward_angle + pi)
 
         if abs(reverse_angle) < abs(forward_angle) and self.allow_reverse:
-            return self._compute_wheel_speeds(reverse_angle, drive_direction=-1.0)
+            return self._compute_wheel_powers(reverse_angle, drive_direction=-1.0)
 
-        return self._compute_wheel_speeds(forward_angle, drive_direction=1.0)
+        return self._compute_wheel_powers(forward_angle, drive_direction=1.0)
 
     def _find_lookahead_point(self, pose: Pose) -> Point | None:
         if not self.path:
@@ -108,18 +108,23 @@ class PurePursuitController:
         target_heading = atan2(dy, dx)
         return wrap_angle(target_heading - pose.yaw)
 
-    def _compute_wheel_speeds(
+    def _compute_wheel_powers(
         self,
         steering_angle: float,
         drive_direction: float = 1.0,
     ) -> PurePursuitOutput:
-        base_speed = 1.0
+        base_power = 1.0
         steering = (steering_angle / pi) * self.config.steering_gain
         turn = max(-1.0, min(1.0, steering))
 
-        linear_speed = base_speed * drive_direction
-        angular_speed = base_speed * turn
+        linear_speed = base_power * drive_direction
+        angular_speed = base_power * turn
 
         left_speed = linear_speed - angular_speed
         right_speed = linear_speed + angular_speed
-        return PurePursuitOutput(left_speed=left_speed, right_speed=right_speed)
+
+        scale = max(abs(left_speed), abs(right_speed))
+        left_speed /= scale
+        right_speed /= scale
+
+        return PurePursuitOutput(left_power=left_speed, right_power=right_speed)
