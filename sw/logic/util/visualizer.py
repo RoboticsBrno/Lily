@@ -50,21 +50,22 @@ class Visualizer:
         self._screen: Any = None
         self._font: Any = None
 
-    def run(self, target_fps: int = 60) -> None:
+    def init(self) -> None:
         pygame.init()
-        screen = pygame.display.set_mode(self.window_size, pygame.RESIZABLE)
+        self._screen = pygame.display.set_mode(self.window_size, pygame.RESIZABLE)
         pygame.display.set_caption(self.title)
-        clock = pygame.time.Clock()
-        self._screen = screen
-        self._font = pygame.font.Font(None, 24)
 
         self._center_camera()
+
+    def run(self, target_fps: int = 60) -> None:
+        clock = pygame.time.Clock()
+        self._font = pygame.font.Font(None, 24)
 
         running = True
         while running:
             dt_seconds = clock.tick(target_fps) / 1000.0
 
-            self._clear_frame(screen)
+            self._clear_frame(self._screen)
 
             for event in pygame.event.get():
                 if self.on_event is not None:
@@ -74,8 +75,7 @@ class Visualizer:
                     running = False
                 elif event.type == pygame.VIDEORESIZE:
                     self.window_size = (max(1, event.w), max(1, event.h))
-                    screen = pygame.display.set_mode(self.window_size, pygame.RESIZABLE)
-                    self._screen = screen
+                    self._screen = pygame.display.set_mode(self.window_size, pygame.RESIZABLE)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
                         self._dragging = True
@@ -93,7 +93,7 @@ class Visualizer:
                 elif event.type == pygame.MOUSEWHEEL:
                     self._zoom_at_point(float(event.y), pygame.mouse.get_pos())
 
-            self._draw_grid(screen)
+            self._draw_grid(self._screen)
 
             if self.on_tick is not None:
                 self.on_tick(dt_seconds)

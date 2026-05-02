@@ -5,52 +5,55 @@ from enum import Enum, auto
 from math import ceil, cos, hypot, pi, sin
 from pathlib import Path
 import time
+from typing import Optional
 
 from comm.controller import Controller
-from comm.binary_serializer import BinarySerializer
 from comm.messages import ClawAction, ClawCommand, Measurements, MoveCommand, SubscribeCommand
-from comm.recording_transport import RecordingTransport
 from comm.udp_transport import UdpTransport
 from control.pure_pursuit import PurePursuitConfig, PurePursuitController
 from control.bear_approach import plan_bear_approach_path
 from geometry.shapes import Line, Point, Vector
-from geometry.util import angular_distance, dist2
-from localization.particle_filter import ParticleFilterLocalizer
-from localization.bear_detector import BearDetector
+from geometry.util import dist2
+from localization.bear_detector import BearDetection
+from geometry.transforms import Pose
 from sim.robot import RobotConfig
 from sim.sensors import LidarSensorConfig, MotorConfig
 from sim.server import create_server_from_map
-from util.remote_control_common import (
+from logic.util.init_common import (
+    CONTROLLER_RECEIVE_PORT,
+    LIDAR_HZ,
+    LIDAR_MAX_DISTANCE,
+    LIDAR_SAMPLE,
+    SIM_PORT,
+    TARGET_FPS,
+    WHEEL_BASE,
+    LocalizationStack,
+    build_controller,
     build_localization_stack,
     create_default_bear,
+    resolve_map_path,
+)
+from util.vis_common import (
     draw_bear,
     draw_bear_detection,
     draw_candidate_points,
     draw_estimated_pose,
-    draw_lidar_history,
+    # draw_lidar_history,
     draw_particles,
-    handle_ui_control_event,
-    resolve_map_path,
+    draw_path,
+    handle_ui_control_event
 )
 from util.visualizer import Visualizer
 
-TARGET_FPS = 60
-SIM_PORT = 5005
-CONTROLLER_RECEIVE_PORT = 5006
-LIDAR_MAX_DISTANCE = 8.0
-LIDAR_HZ = 10
-LIDAR_SAMPLE = 3900
-LIDAR_HISTORY = ceil(LIDAR_SAMPLE / LIDAR_HZ)
-WHEEL_BASE = 0.25
-PARTICLE_COUNT = 200
+
 PURSUIT_LOOKAHEAD = 0.18
 COMMAND_SCALE = 0.5
 GOAL_TOLERANCE_M = 0.08
-MIN_BEAR_DIAMETER_M = 0.10
 MAX_SPEED = 1
 
 RETRIEVE_BLINDSPOT_RANGE = 0.5 * pi
 RETRIEVE_BLINDSPOT_OFFSET = 0
+ROBOT_BODY_RADIUS = 0.125
 
 
 class PursuitState(Enum):
@@ -86,28 +89,24 @@ class PursuitStateMachine:
         self,
         pursuit: PurePursuitController,
         controller: Controller,
-        localizer: ParticleFilterLocalizer,
-        bear_detector: BearDetector,
-        lidar_history: deque[tuple[Point, Vector]],
+        localization: LocalizationStack
     ) -> None:
         self.planned_path: list[Point] = []
         self.pursuit = pursuit
         self.controller = controller
-        self.localizer = localizer
-        self.bear_detector = bear_detector
-        self.lidar_history = lidar_history
+        self.localization = localization
         self.state = PursuitState.INIT
         self.delay_end = 0.0
 
     def _on_last_segment(self) -> bool:
         return len(self.planned_path) >= 2 and self.pursuit.current_segment >= len(self.planned_path) - 3
 
-    def _should_replan_to_bear(self, estimated, bear_detection) -> bool:
+    def _should_replan_to_bear(self, estimated: Pose, bear_detection: Optional[BearDetection]) -> bool:
         return (
             self._on_last_segment()
             and bear_detection is not None
             and bear_detection.position.y > 1.4
-            and dist2(estimated, bear_detection.position) > (0.5 * 0.5)
+            and dist2(Point(estimated.x, estimated.y), bear_detection.position) > (0.5 * 0.5)
         )
 
     def _replan_to_bear(self, estimated, bear_detection) -> None:
@@ -116,11 +115,11 @@ class PursuitStateMachine:
         self.planned_path = plan_bear_approach_path(
             start=start,
             detected_bear=bear_detection.position,
-            world=self.bear_detector.world,
+            world=self.localization.world,
         )
         self.pursuit.update_plan(self.planned_path, False)
 
-    def _at_goal(self, estimated) -> bool:
+    def _at_goal(self, estimated: Pose) -> bool:
         if not self.planned_path:
             return True
         goal = self.planned_path[-1]
@@ -129,14 +128,16 @@ class PursuitStateMachine:
     def _stop_command(self) -> MoveCommand:
         return MoveCommand(left_speed=0, right_speed=0)
 
-    def _follow_path(self, estimated) -> MoveCommand:
+    def _follow_path(self, estimated: Pose) -> MoveCommand:
         control = self.pursuit.compute(estimated)
         return MoveCommand(
             left_speed=_clamp_scale(control.left_power, -1, 1, MAX_SPEED),
             right_speed=_clamp_scale(control.right_power, -1, 1, MAX_SPEED),
         )
 
-    def _loop(self, estimated, bear_detection) -> None:
+    def loop(self) -> None:
+        estimated = self.localization.localizer.get_estimate()
+        bear_detection = self.localization.bear_detector.get_estimate()
         if self.state == PursuitState.FINISHED:
             self.controller.send_command(self._stop_command())
             return
@@ -192,31 +193,6 @@ class PursuitStateMachine:
             self.controller.send_command(self._follow_path(estimated))
             return
 
-    def process_tick(self, measurements: list[Measurements]):
-        for m in measurements:
-            if self.state in [PursuitState.CAPTURE_BEAR, PursuitState.SEEKING_RETURN_PATH]:
-                m.lidar = list(filter(lambda lm: abs(angular_distance(lm.angle, RETRIEVE_BLINDSPOT_OFFSET)) > RETRIEVE_BLINDSPOT_RANGE / 2.0, m.lidar))
-            self.localizer.update(m)
-            estimated_pose = self.localizer.estimate_pose()
-            feature_points = self.bear_detector.update(estimated_pose, m.lidar)
-            for point, feature in feature_points:
-                self.lidar_history.append((point, feature))
-
-        estimated = self.localizer.estimate_pose()
-        bear_detection = self.bear_detector.get_estimate()
-        self._loop(estimated, bear_detection)
-        return estimated, bear_detection
-
-
-def _draw_path(visualizer: Visualizer, path: list[Point]) -> None:
-    if len(path) < 2:
-        return
-
-    for i in range(len(path) - 1):
-        visualizer.draw(Line(a=path[i], b=path[i + 1]), color=(120, 170, 255), width_px=2)
-    for p in path:
-        visualizer.draw(p, color=(190, 220, 255), point_radius_px=3)
-
 
 def _clamp_scale(value: float, low: float = -1.0, high: float = 1.0, scale: float = 1.0) -> float:
     return max(low, min(high, value)) * scale
@@ -253,38 +229,28 @@ def main() -> None:
         publish_hz=30.0,
     )
 
-    controller = Controller(
-        transport=RecordingTransport(
-            UdpTransport(
-                host="127.0.0.1",
-                port=SIM_PORT,
-                receive_port=CONTROLLER_RECEIVE_PORT,
-            ),
-            "recording.csv",
-        ),
-        serializer=BinarySerializer(),
+    visualizer = Visualizer(title="Simulator + Pure Pursuit Demo")
+
+    localization = build_localization_stack(map_path, server.get_true_pose())
+    controller = build_controller(
+        UdpTransport(
+            host="127.0.0.1",
+            port=SIM_PORT,
+            receive_port=CONTROLLER_RECEIVE_PORT,
+        )
     )
 
-    visualizer = Visualizer(
-        title="Simulator + Pure Pursuit Demo",
-    )
+    def on_measurements(measurements: Measurements):
+        print("on measurements")
+        localization.on_measurements(measurements)
+        pursuit_state_machine.loop()
 
-    world, localizer, bear_detector = build_localization_stack(map_path, server.get_true_pose())
+    controller.set_measurement_callback(on_measurements)
 
-    measurement_queue: deque[Measurements] = deque(maxlen=4000)
-
-    def _enqueue_measurements(measurements: Measurements) -> None:
-        measurement_queue.append(measurements)
-
-    controller.set_measurement_callback(_enqueue_measurements)
-
-    lidar_history: deque[tuple[Point, Vector]] = deque(maxlen=LIDAR_HISTORY)
     pursuit_state_machine = PursuitStateMachine(
         pursuit=PurePursuitController(PurePursuitConfig(lookahead_distance=PURSUIT_LOOKAHEAD)),
         controller=controller,
-        localizer=localizer,
-        bear_detector=bear_detector,
-        lidar_history=lidar_history,
+        localization=localization
     )
     resizing_bear_with_right_drag = False
 
@@ -297,18 +263,19 @@ def main() -> None:
             resizing_bear_with_right_drag,
         )
 
-    def on_tick(dt_seconds: float) -> None:
+    def on_ui_tick(dt_seconds: float) -> None:
         _ = dt_seconds
+        controller.send_command(SubscribeCommand())
 
         truth = server.get_true_pose()
-        heading_length = server.robot.config.diameter * 0.5
-        measurements: list[Measurements] = list(measurement_queue)
-        measurement_queue.clear()
-        estimated, bear_detection = pursuit_state_machine.process_tick(measurements)
+        estimated = localization.localizer.get_estimate()
+        bear_detection = localization.bear_detector.get_estimate()
+        print(f"State: {pursuit_state_machine.state}, Estimated: {estimated.x:.3f}, {estimated.y:.3f}, {estimated.yaw:.2f}")
 
-        visualizer.draw(world, color=(224, 228, 236), width_px=3)
+        visualizer.draw(localization.world, color=(224, 228, 236))
         draw_bear(visualizer, bear)
-        _draw_path(visualizer, pursuit_state_machine.planned_path)
+        draw_path(visualizer, pursuit_state_machine.planned_path)
+        heading_length = ROBOT_BODY_RADIUS
         robot_center = Point(truth.x, truth.y)
         heading_tip = Point(
             truth.x + heading_length * cos(truth.yaw),
@@ -324,13 +291,14 @@ def main() -> None:
 
         draw_estimated_pose(visualizer, estimated, heading_length)
         draw_bear_detection(visualizer, bear_detection, estimated)
-        draw_particles(visualizer, localizer)
+        draw_particles(visualizer, localization.localizer)
         # draw_lidar_history(visualizer, lidar_history, show_magnitude=False)
-        draw_candidate_points(visualizer, bear_detector)
+        draw_candidate_points(visualizer, localization.bear_detector)
 
-    visualizer.on_tick = on_tick
+    visualizer.on_tick = on_ui_tick
     visualizer.on_event = on_event
 
+    visualizer.init()
     server.start()
     controller.start()
     controller.send_command(SubscribeCommand())

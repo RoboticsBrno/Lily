@@ -51,7 +51,7 @@ class ParticleFilterLocalizer:
         self.config = config
         self.particles: list[Particle] = []
         self.last_encoders: Optional[Encoders] = None
-        self._smoothed_pose: Optional[Pose] = None
+        self._smoothed_pose = initial_pose
 
         self.particles = []
         for _ in range(self.config.num_particles):
@@ -85,11 +85,14 @@ class ParticleFilterLocalizer:
         theta = atan2(sin_sum, cos_sum)
         raw_pose = Pose(x, y, theta)
 
-        if self._smoothed_pose is None or self.config.estimate_smoothing_alpha >= 1.0:
+        if self.config.estimate_smoothing_alpha >= 1.0:
             self._smoothed_pose = raw_pose
             return raw_pose
 
         self._smoothed_pose = lerp(self._smoothed_pose, raw_pose, self.config.estimate_smoothing_alpha)
+        return self._smoothed_pose
+
+    def get_estimate(self) -> Pose:
         return self._smoothed_pose
 
     def _apply_motion_model(self, enc: Encoders) -> None:
@@ -112,8 +115,7 @@ class ParticleFilterLocalizer:
             ).compose(rotation(random.gauss(0, self.config.heading_noise)))
             particle.pose = particle.pose.to_transform().compose(movement_transform).compose(noise_transform).to_pose()
 
-        if self._smoothed_pose:
-            self._smoothed_pose = self._smoothed_pose.to_transform().compose(movement_transform).to_pose()
+        self._smoothed_pose = self._smoothed_pose.to_transform().compose(movement_transform).to_pose()
 
     def _apply_sensor_model(self, lidar_measurements: list[tuple[float, float]]) -> None:
         lidar_measurements = list(filter(lambda m: m[1] < 8.0, lidar_measurements))

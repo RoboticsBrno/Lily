@@ -1,38 +1,18 @@
-from __future__ import annotations
-
 from collections import deque
-from math import ceil, cos, hypot, sin
-from pathlib import Path
+from math import cos, hypot, sin
 from typing import Any
 
-from comm.binary_serializer import BinarySerializer
-from comm.controller import Controller
-from comm.recording_transport import RecordingTransport
-from comm.replay_transport import ReplayTransport
-from comm.types import Transport
 from geometry.shapes import Circle, Line, Point, Vector
 from geometry.transforms import Pose
-from localization import BearDetectionConfig, BearDetector
-from localization.particle_filter import ParticleFilterConfig, ParticleFilterLocalizer
-from map.loader import load_world_from_json
+from localization.particle_filter import ParticleFilterLocalizer
+from localization.bear_detector import BearDetector
 from util.keyboard_controller import KeyboardRobotController
 from util.visualizer import Visualizer
 
 import pygame
 
 
-TARGET_FPS = 60
-SIM_PORT = 5005
-CONTROLLER_RECEIVE_PORT = 5006
-LIDAR_MAX_DISTANCE = 8.0
-LIDAR_HZ = 10
-LIDAR_SAMPLE = 3900
-LIDAR_HISTORY = ceil(LIDAR_SAMPLE / LIDAR_HZ / 2)
-WHEEL_BASE = 0.25
-PARTICLE_COUNT = 400
 MIN_BEAR_DIAMETER_M = 0.10
-
-
 KEY_MAP = {
     pygame.K_w: "w",
     pygame.K_s: "s",
@@ -47,73 +27,6 @@ KEY_MAP = {
     pygame.K_o: "o",
     pygame.K_c: "c",
 }
-
-
-def resolve_map_path(repo_root: Path, map_arg: str) -> Path:
-    map_path = Path(map_arg)
-    if not map_path.is_absolute():
-        map_path = repo_root / map_path
-    return map_path
-
-
-def create_default_bear() -> Circle:
-    return Circle(
-        center=Point(0.05, 1.45),
-        radius=0.05,
-    )
-
-
-def build_keyboard_controller(
-    transport: Transport,
-    recording_path: str = "recording.csv",
-    max_measurements: int = 4000,
-) -> KeyboardRobotController:
-    return KeyboardRobotController(
-        controller=Controller(
-            transport=RecordingTransport(transport, recording_path),
-            serializer=BinarySerializer(),
-        ),
-        max_measurements=max_measurements,
-    )
-
-
-def build_replay_player(
-    recording_path: str = "recording.csv",
-    speed: float = 1.0,
-    max_measurements: int = 4000,
-) -> KeyboardRobotController:
-    return KeyboardRobotController(
-        controller=Controller(
-            transport=ReplayTransport(recording_path, speed=speed),
-            serializer=BinarySerializer(),
-        ),
-        max_measurements=max_measurements,
-    )
-
-
-def build_localization_stack(
-    map_path: Path,
-    initial_pose: Pose,
-) -> tuple[Any, ParticleFilterLocalizer, BearDetector]:
-    world = load_world_from_json(map_path)
-    localizer = ParticleFilterLocalizer(
-        world=world,
-        config=ParticleFilterConfig(
-            num_particles=PARTICLE_COUNT,
-            wheel_base=WHEEL_BASE,
-            ticks_per_meter=1000.0,
-            position_noise=0.007,
-            heading_noise=0.01,
-            lidar_likelihood_stddev=0.08,
-            estimate_smoothing_alpha=0.1,
-        ),
-        initial_pose=initial_pose,
-    )
-    bear_detector = BearDetector(
-        world=world,
-        config=BearDetectionConfig(),
-    )
-    return world, localizer, bear_detector
 
 
 def handle_ui_control_event(
@@ -155,27 +68,10 @@ def handle_robot_control_event(
             controller.key_up(key_name)
 
 
-def process_measurements(
-    controller: KeyboardRobotController,
-    localizer: ParticleFilterLocalizer,
-    bear_detector: BearDetector,
-    lidar_history: deque[tuple[Point, Vector]],
-) -> tuple[Pose, Any]:
-    for measurement in controller.get_measurements():
-        localizer.update(measurement)
-        estimated_pose = localizer.estimate_pose()
-
-        feature_points = bear_detector.update(estimated_pose, measurement.lidar)
-        for point, feature in feature_points:
-            lidar_history.append((point, feature))
-
-    return localizer.estimate_pose(), bear_detector.get_estimate()
-
-
 def draw_particles(visualizer: Visualizer, localizer: ParticleFilterLocalizer) -> None:
     for particle in localizer.particles:
         visualizer.draw(
-            Circle(Point(particle.pose.x, particle.pose.y), radius=(particle.weight * PARTICLE_COUNT) / 300),
+            Circle(Point(particle.pose.x, particle.pose.y), radius=(particle.weight * len(localizer.particles)) / 300),
             color=(0, 100, 0),
         )
         visualizer.draw(
@@ -197,7 +93,7 @@ def draw_lidar_history(
     show_magnitude: bool = False,
 ) -> None:
     max_feature = 0.05
-    for lidar_point, feature in lidar_history:
+    for lidar_point, feature in list(lidar_history):
         magnitude = feature.magnitude()
         normalized = 0.0 if max_feature <= 0.0 else max(0.0, min(1.0, magnitude / max_feature))
         red = int(255 * normalized)
@@ -287,10 +183,20 @@ def draw_bear(visualizer: Visualizer, bear: Circle) -> None:
 
 
 def draw_candidate_points(visualizer: Visualizer, bear_detector: BearDetector) -> None:
-    for reverse_candidates in bear_detector._candidate_points:
+    for reverse_candidates in list(bear_detector._candidate_points):
         for point in reverse_candidates:
             visualizer.draw(
                 point,
                 color=(255, 110, 0),
                 point_radius_px=2,
             )
+
+
+def draw_path(visualizer: Visualizer, path: list[Point]) -> None:
+    if len(path) < 2:
+        return
+
+    for i in range(len(path) - 1):
+        visualizer.draw(Line(a=path[i], b=path[i + 1]), color=(120, 170, 255), width_px=2)
+    for p in path:
+        visualizer.draw(p, color=(190, 220, 255), point_radius_px=3)

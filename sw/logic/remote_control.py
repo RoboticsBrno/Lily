@@ -1,17 +1,19 @@
 from __future__ import annotations
 
-from collections import deque
 from pathlib import Path
 
 from comm.serial_transport import SerialTransport
 from geometry.transforms import Pose
-from util.remote_control_common import (
-    LIDAR_HISTORY,
+from logic.util.init_common import (
     TARGET_FPS,
-    build_keyboard_controller,
+    build_controller,
+    connect_keyboard_ctrl,
     build_localization_stack,
-    build_replay_player,
+    # build_replay_player,
     create_default_bear,
+    resolve_map_path,
+)
+from util.vis_common import (
     draw_bear,
     draw_bear_detection,
     draw_candidate_points,
@@ -20,8 +22,6 @@ from util.remote_control_common import (
     draw_particles,
     handle_robot_control_event,
     handle_ui_control_event,
-    process_measurements,
-    resolve_map_path,
 )
 from util.visualizer import Visualizer
 
@@ -35,15 +35,13 @@ def main() -> None:
 
     bear = create_default_bear()
 
-    world, localizer, bear_detector = build_localization_stack(map_path, Pose(0.7, 2, 0.0))
-    controller = build_keyboard_controller(SerialTransport(device="/dev/ttyUSB0", baud_rate=921600))
+    localization = build_localization_stack(map_path, Pose(0.7, 2, 0.0))
+    controller = build_controller(SerialTransport(device="/dev/ttyUSB0", baud_rate=921600))
     # controller = build_replay_player("recording_bear.csv", speed=1.0)
+    keyboard = connect_keyboard_ctrl(controller)
 
-    visualizer = Visualizer(
-        title="Keyboard Controller",
-    )
+    visualizer = Visualizer(title="Keyboard Controller")
 
-    lidar_history: deque = deque(maxlen=LIDAR_HISTORY)
     resizing_bear_with_right_drag = False
 
     def on_event(event) -> None:
@@ -56,27 +54,26 @@ def main() -> None:
         )
         handle_robot_control_event(
             event,
-            controller,
+            keyboard,
         )
 
-    def on_tick(dt_seconds: float) -> None:
+    def on_ui_tick(dt_seconds: float) -> None:
         _ = dt_seconds
 
-        # truth = server.get_true_pose()
-        estimated, bear_detection = process_measurements(controller, localizer, bear_detector, lidar_history)
+        estimated = localization.localizer.estimate_pose()
+        bear_detection = localization.bear_detector.get_estimate()
 
         # Visualization
-        visualizer.draw(world, color=(224, 228, 236))
+        visualizer.draw(localization.world, color=(224, 228, 236))
         draw_bear(visualizer, bear)
-        # print(f"Estimated pose: {estimated.x:.2f}, {estimated.y:.2f}, {estimated.yaw:.2f}")
 
         draw_estimated_pose(visualizer, estimated, ROBOT_BODY_RADIUS)
         draw_bear_detection(visualizer, bear_detection, estimated)
-        draw_particles(visualizer, localizer)
-        draw_lidar_history(visualizer, lidar_history, show_magnitude=False)
-        draw_candidate_points(visualizer, bear_detector)
+        draw_particles(visualizer, localization.localizer)
+        draw_lidar_history(visualizer, localization.lidar_history, show_magnitude=False)
+        draw_candidate_points(visualizer, localization.bear_detector)
 
-    visualizer.on_tick = on_tick
+    visualizer.on_tick = on_ui_tick
     visualizer.on_event = on_event
 
     # with server:
