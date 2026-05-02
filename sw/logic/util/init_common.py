@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-from collections import deque
 from math import ceil
 from pathlib import Path
 
 from comm.binary_serializer import BinarySerializer
 from comm.controller import Controller
-from comm.messages import Measurements
 from comm.recording_transport import RecordingTransport
 from comm.replay_transport import ReplayTransport
 from comm.types import Transport
-from geometry.shapes import Circle, Point, ShapeGroup, Vector
+from geometry.shapes import Circle, Point
 from geometry.transforms import Pose
 from localization import BearDetectionConfig, BearDetector
 from localization.particle_filter import ParticleFilterConfig, ParticleFilterLocalizer
+from localization.stack import LocalizationStack
 from map.loader import load_world_from_json
 from util.keyboard_controller import KeyboardRobotController
 
@@ -26,7 +25,7 @@ LIDAR_HZ = 10
 LIDAR_SAMPLE = 3900
 LIDAR_HISTORY = ceil(LIDAR_SAMPLE / LIDAR_HZ / 2)
 WHEEL_BASE = 0.25
-PARTICLE_COUNT = 500
+PARTICLE_COUNT = 200
 
 
 def resolve_map_path(repo_root: Path, map_arg: str) -> Path:
@@ -69,28 +68,6 @@ def connect_keyboard_ctrl(
     return KeyboardRobotController(controller)
 
 
-class LocalizationStack:
-    world: ShapeGroup
-    localizer: ParticleFilterLocalizer
-    bear_detector: BearDetector
-    lidar_history: deque[tuple[Point, Vector]]
-
-    def __init__(self, world: ShapeGroup, localizer: ParticleFilterLocalizer, bear_detector: BearDetector) -> None:
-        self.world = world
-        self.localizer = localizer
-        self.bear_detector = bear_detector
-        self.lidar_history = deque(maxlen=LIDAR_HISTORY)
-
-    def on_measurements(self, measurement: Measurements) -> None:
-        self.localizer.update(measurement)
-        estimated_pose = self.localizer.estimate_pose()
-        print(f"{estimated_pose.x:.2} {estimated_pose.y:.2}")
-
-        feature_points = self.bear_detector.update(estimated_pose, measurement.lidar)
-        for point, feature in feature_points:
-            self.lidar_history.append((point, feature))
-
-
 def build_localization_stack(
     map_path: Path,
     initial_pose: Pose,
@@ -114,4 +91,4 @@ def build_localization_stack(
         config=BearDetectionConfig(),
     )
 
-    return LocalizationStack(world, localizer, bear_detector)
+    return LocalizationStack(world, localizer, bear_detector, LIDAR_HISTORY)

@@ -9,7 +9,7 @@ from comm.messages import SubscribeCommand
 from sim.robot import RobotConfig
 from sim.sensors import LidarSensorConfig, MotorConfig
 from sim.server import create_server_from_map
-from logic.util.init_common import (
+from util.init_common import (
     CONTROLLER_RECEIVE_PORT,
     LIDAR_HZ,
     LIDAR_MAX_DISTANCE,

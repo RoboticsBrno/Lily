@@ -2,6 +2,7 @@
 
 from .bear_detector import BearDetection, BearDetectionConfig, BearDetector
 from .particle_filter import ParticleFilterLocalizer, ParticleFilterConfig
+from .stack import LocalizationStack
 
 __all__ = [
     "ParticleFilterLocalizer",
@@ -9,4 +10,5 @@ __all__ = [
     "BearDetector",
     "BearDetection",
     "BearDetectionConfig",
+    "LocalizationStack",
 ]

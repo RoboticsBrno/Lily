@@ -4,7 +4,7 @@ from pathlib import Path
 
 from comm.serial_transport import SerialTransport
 from geometry.transforms import Pose
-from logic.util.init_common import (
+from util.init_common import (
     TARGET_FPS,
     build_controller,
     connect_keyboard_ctrl,
