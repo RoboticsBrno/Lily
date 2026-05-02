@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import cos, sin
 import math
+from typing import Optional
 
 from comm.messages import ClawCommand, Command, Measurements, MoveCommand
 from geometry.shapes import Circle, Line, Point, ShapeGroup, Vector
@@ -46,7 +47,7 @@ class DifferentialDriveRobotSimulator:
 
         self.claw_open = True
 
-    def get_body_circle(self, pose: Pose | None = None) -> Circle:
+    def get_body_circle(self, pose: Optional[Pose] = None) -> Circle:
         pose_to_draw = self.pose if pose is None else pose
         return Circle(
             center=Point(pose_to_draw.x, pose_to_draw.y),

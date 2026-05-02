@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import dataclass, field
 from math import cos, inf, pi, sin, sqrt
+from typing import Optional
 
 from comm.messages import LidarMeasurement
 import geometry
@@ -25,7 +26,7 @@ class DBSCAN:
         self.min_samples = config.min_samples
 
     def fit(self, points: list[Point]) -> dict[int, list[Point]]:
-        labels: list[int | None] = [None] * len(points)
+        labels: list[Optional[int]] = [None] * len(points)
         cluster_id = 0
 
         for i in range(len(points)):
@@ -103,7 +104,7 @@ class BearDetector:
         self._last_angle: float = 0.0
         self._feat_vec = Vector(0, 0)
         self._candidate_detections: list[BearDetection] = []
-        self._last_detection: BearDetection | None = None
+        self._last_detection: Optional[BearDetection] = None
 
     def update(self, robot_pose: Pose, measurements: list[LidarMeasurement]) \
             -> list[tuple[Point, Vector]]:
@@ -259,8 +260,8 @@ class BearDetector:
         radius = sqrt((ux - a.x) * (ux - a.x) + (uy - a.y) * (uy - a.y))
         return Circle(center=center, radius=radius)
 
-    def _match_detections(self, points: list[Point]) -> tuple[list[Point | None], list[Point]]:
-        matched: list[Point | None] = [None] * len(self._candidate_detections)
+    def _match_detections(self, points: list[Point]) -> tuple[list[Optional[Point]], list[Point]]:
+        matched: list[Optional[Point]] = [None] * len(self._candidate_detections)
         new: list[Point] = []
 
         for point in points:
@@ -279,5 +280,5 @@ class BearDetector:
 
         return matched, new
 
-    def get_estimate(self) -> BearDetection | None:
+    def get_estimate(self) -> Optional[BearDetection]:
         return self._last_detection

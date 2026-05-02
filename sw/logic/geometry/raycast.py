@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from math import acos, cos, inf, isfinite, pi, sin, sqrt
-from typing import Optional
+from typing import Optional, Union
 
 from .shapes import Circle, Line, Point, ShapeGroup, ShapeItem, Vector
 
@@ -15,7 +15,7 @@ class RaycastHit:
     point: Point
     distance: float
     shape: ShapeItem
-    angle_of_incidence: float | None
+    angle_of_incidence: Optional[float]
 
 
 @dataclass(frozen=True)
@@ -34,7 +34,7 @@ class RaycastGroup:
     items: list[RaycastGroupItem]
 
 
-RaycastTarget = ShapeItem | RaycastGroup
+RaycastTarget = Union[ShapeItem, RaycastGroup]
 
 
 def raycast(
@@ -100,7 +100,7 @@ def _raycast_group_with_incidence_limits(
     max_distance: float,
 ) -> Optional[RaycastHit]:
     nearest_hit: Optional[RaycastHit] = None
-    nearest_max_incidence: float | None = None
+    nearest_max_incidence: Optional[float] = None
     current_limit = max_distance
     for item in group.items:
         hit = raycast(item.shape, origin, direction, max_distance=current_limit)
@@ -223,7 +223,7 @@ def _raycast_circle(
 def _incidence_angle_from_normal(
     direction: Vector,
     normal: Vector,
-) -> float | None:
+) -> Optional[float]:
     ray_norm = direction.magnitude()
     normal_norm = normal.magnitude()
     if ray_norm < EPSILON or normal_norm < EPSILON:
@@ -240,8 +240,8 @@ def _hit_from_t(
     t: float,
     direction: Vector,
     max_distance: float,
-    shape: ShapeItem | None = None,
-    angle_of_incidence: float | None = None,
+    shape: Optional[ShapeItem] = None,
+    angle_of_incidence: Optional[float] = None,
 ) -> Optional[RaycastHit]:
     distance = t * direction.magnitude()
     if isfinite(max_distance) and distance > max_distance + EPSILON:

@@ -1,4 +1,5 @@
 from math import pi, sqrt
+from typing import Optional
 
 from geometry.shapes import Circle, Line, Point, ShapeGroup, ShapeItem
 from geometry.transforms import Pose
@@ -89,7 +90,7 @@ def find_nearest(
     input: ShapeItem,
     point: Point,
 ) -> tuple[ShapeItem, float]:
-    nearest_shape: ShapeItem | None = None
+    nearest_shape: Optional[ShapeItem] = None
     nearest_dist2 = float("inf")
     pending: list[ShapeItem] = [input]
 

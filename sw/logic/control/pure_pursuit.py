@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from math import atan2, hypot, pi
+from typing import Optional
 
 from geometry.shapes import Point
 from geometry.transforms import Pose
@@ -49,7 +50,7 @@ class PurePursuitController:
 
         return self._compute_wheel_powers(forward_angle, drive_direction=1.0)
 
-    def _find_lookahead_point(self, pose: Pose) -> Point | None:
+    def _find_lookahead_point(self, pose: Pose) -> Optional[Point]:
         if not self.path:
             return None
 

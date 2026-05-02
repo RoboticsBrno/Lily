@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from math import atan2, cos, exp, pi, sin
 from random import gauss
 import random
+from typing import Optional
 
 from comm.messages import Measurements
 from geometry import (
@@ -49,8 +50,8 @@ class ParticleFilterLocalizer:
         self.world = world
         self.config = config
         self.particles: list[Particle] = []
-        self.last_encoders: Encoders | None = None
-        self._smoothed_pose: Pose | None = None
+        self.last_encoders: Optional[Encoders] = None
+        self._smoothed_pose: Optional[Pose] = None
 
         self.particles = []
         for _ in range(self.config.num_particles):

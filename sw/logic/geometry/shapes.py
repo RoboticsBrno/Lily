@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from math import hypot
-from typing import TypeAlias, Union
+from typing import Union
 
 from .transforms import Transformation
 
 
-ShapeItem: TypeAlias = Union[
+ShapeItem = Union[
     "Point",
     "Circle",
     "Line",

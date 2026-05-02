@@ -5,7 +5,7 @@ import threading
 import time
 from collections import deque
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from comm.binary_serializer import BinarySerializer
 from comm.messages import Command, SubscribeCommand
@@ -98,7 +98,7 @@ class RobotSimulatorServer:
 
 
 def create_server_from_map(
-    map_path: str | Path,
+    map_path: Union[str, Path],
     robot_config: RobotConfig,
     lidar_config: LidarSensorConfig,
     motor_config: MotorConfig,
