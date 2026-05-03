@@ -72,24 +72,10 @@ class DifferentialDriveRobotSimulator:
             .compose(rotation(claw_angle))
         )
 
-        left_hinge_xy = base_transform.apply_to_point(
-            *left_claw_transform.apply_to_point(0.0, 0.0)
-        )
-        left_tip_xy = base_transform.apply_to_point(
-            *left_claw_transform.apply_to_point(self.config.claw_length, 0.0)
-        )
-
-        right_hinge_xy = base_transform.apply_to_point(
-            *right_claw_transform.apply_to_point(0.0, 0.0)
-        )
-        right_tip_xy = base_transform.apply_to_point(
-            *right_claw_transform.apply_to_point(self.config.claw_length, 0.0)
-        )
-
-        left_hinge = Point(*left_hinge_xy)
-        left_tip = Point(*left_tip_xy)
-        right_hinge = Point(*right_hinge_xy)
-        right_tip = Point(*right_tip_xy)
+        left_hinge = Point(0.0, 0.0).apply_transform(base_transform.compose(left_claw_transform))
+        left_tip = Point(self.config.claw_length, 0.0).apply_transform(base_transform.compose(left_claw_transform))
+        right_hinge = Point(0.0, 0.0).apply_transform(base_transform.compose(right_claw_transform))
+        right_tip = Point(self.config.claw_length, 0.0).apply_transform(base_transform.compose(right_claw_transform))
 
         return (
             Line(a=left_hinge, b=left_tip),

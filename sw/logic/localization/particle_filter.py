@@ -3,30 +3,31 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import atan2, cos, exp, pi, sin
-from random import gauss
+from math import atan2, exp, pi
 import random
 from typing import Optional
 
 from comm.messages import Measurements
 from geometry import (
     ShapeGroup,
-    wrap_angle,
 )
-from geometry.shapes import Point
 from geometry.transforms import Pose, rotation, translation
-from geometry.util import find_nearest, lerp
+from geometry.util import lerp
+
+import numpy as np
+
+from map.raster import RasterMap
 
 
 @dataclass
 class ParticleFilterConfig:
-    num_particles: int = 100
-    wheel_base: float = 0.2
-    ticks_per_meter: float = 1000.0
-    position_noise: float = 0.01
-    heading_noise: float = 0.01
-    lidar_likelihood_stddev: float = 0.1
-    estimate_smoothing_alpha: float = 1.0
+    num_particles: int
+    wheel_base: float
+    ticks_per_meter: float
+    position_noise: float
+    heading_noise: float
+    estimate_smoothing_alpha: float
+    lidar_likelihood_map: RasterMap
 
     def __post_init__(self) -> None:
         if not 0.0 <= self.estimate_smoothing_alpha <= 1.0:
@@ -49,16 +50,14 @@ class ParticleFilterLocalizer:
     def __init__(self, world: ShapeGroup, config: ParticleFilterConfig, initial_pose: Pose) -> None:
         self.world = world
         self.config = config
-        self.particles: list[Particle] = []
         self.last_encoders: Optional[Encoders] = None
         self._smoothed_pose = initial_pose
 
-        self.particles = []
-        for _ in range(self.config.num_particles):
-            x = initial_pose.x + gauss(0.0, config.position_noise * 10)
-            y = initial_pose.y + gauss(0.0, config.position_noise * 10)
-            theta = wrap_angle(initial_pose.yaw + gauss(0.0, config.heading_noise) * 10)
-            self.particles.append(Particle(Pose(x, y, theta)))
+        n = config.num_particles
+        self.xs = np.full(n, initial_pose.x, dtype="f")
+        self.ys = np.full(n, initial_pose.y, dtype="f")
+        self.thetas = np.full(n, initial_pose.yaw, dtype="f")
+        self.weights = np.full(n, 1.0 / n, dtype="f")
 
         self._normalize_weights()
 
@@ -78,10 +77,10 @@ class ParticleFilterLocalizer:
         self.last_encoders = encoders
 
     def estimate_pose(self) -> Pose:
-        x = sum(p.pose.x * p.weight for p in self.particles)
-        y = sum(p.pose.y * p.weight for p in self.particles)
-        sin_sum = sum(sin(p.pose.yaw) * p.weight for p in self.particles)
-        cos_sum = sum(cos(p.pose.yaw) * p.weight for p in self.particles)
+        x = np.sum(self.xs * self.weights)
+        y = np.sum(self.ys * self.weights)
+        sin_sum = np.sum(np.sin(self.thetas) * self.weights)
+        cos_sum = np.sum(np.cos(self.thetas) * self.weights)
         theta = atan2(sin_sum, cos_sum)
         raw_pose = Pose(x, y, theta)
 
@@ -108,26 +107,30 @@ class ParticleFilterLocalizer:
 
         movement_transform = translation(delta_x, delta_y).compose(rotation(delta_theta))
 
-        for particle in self.particles:
-            noise_transform = translation(
-                random.gauss(0, self.config.position_noise),
-                random.gauss(0, self.config.position_noise),
-            ).compose(rotation(random.gauss(0, self.config.heading_noise)))
-            particle.pose = particle.pose.to_transform().compose(movement_transform).compose(noise_transform).to_pose()
+        n = len(self.xs)
+        position_noise_x = np.random.normal(0.0, self.config.position_noise, size=n)
+        position_noise_y = np.random.normal(0.0, self.config.position_noise, size=n)
+        heading_noise = np.random.normal(0.0, self.config.heading_noise, size=n)
+
+        cos_t = np.cos(self.thetas)
+        sin_t = np.sin(self.thetas)
+        self.xs += cos_t * delta_x - sin_t * delta_y + position_noise_x
+        self.ys += sin_t * delta_x + cos_t * delta_y + position_noise_y
+        self.thetas = (self.thetas + delta_theta + heading_noise + pi) % (2 * pi) - pi
 
         self._smoothed_pose = self._smoothed_pose.to_transform().compose(movement_transform).to_pose()
 
     def _apply_sensor_model(self, lidar_measurements: list[tuple[float, float]]) -> None:
         lidar_measurements = list(filter(lambda m: m[1] < 8.0, lidar_measurements))
-        for particle in self.particles:
-            for angle, distance in random.sample(lidar_measurements, len(lidar_measurements) // 50):
-                lidar_point = Point(
-                    particle.pose.x + cos(particle.pose.yaw + angle) * distance,
-                    particle.pose.y + sin(particle.pose.yaw + angle) * distance,
-                )
-                _, nearest_distance = find_nearest(self.world, lidar_point)
-                likelihood = self._gaussian(0.0, self.config.lidar_likelihood_stddev, nearest_distance)
-                particle.weight *= likelihood
+        for _ in range(len(lidar_measurements) // 50):
+            choices = np.random.choice(len(lidar_measurements), size=len(self.xs))
+            angles = np.array([lidar_measurements[i][0] for i in choices], dtype="f")
+            distances = np.array([lidar_measurements[i][1] for i in choices], dtype="f")
+
+            lidar_xs = self.xs + np.cos(self.thetas + angles) * distances
+            lidar_ys = self.ys + np.sin(self.thetas + angles) * distances
+            likelihoods = self.config.lidar_likelihood_map.get_many(lidar_xs, lidar_ys)
+            self.weights *= likelihoods
 
     def _gaussian(self, mu: float, sigma: float, x: float) -> float:
         if sigma <= 0:
@@ -135,30 +138,39 @@ class ParticleFilterLocalizer:
         return (1.0 / (sigma * (2.0 * pi) ** 0.5)) * exp(-0.5 * ((x - mu) / sigma) ** 2) + 0.2
 
     def _normalize_weights(self) -> None:
-        total_weight = sum(p.weight for p in self.particles)
+        total_weight: float = np.sum(self.weights)
         if total_weight == 0.0:
-            for particle in self.particles:
-                particle.weight = 1.0 / len(self.particles)
+            self.weights.fill(1.0 / len(self.weights))
             return
 
-        for particle in self.particles:
-            particle.weight /= total_weight
+        self.weights /= total_weight
 
     def _resample_particles(self) -> None:
-        tiny_parts = sum([1 for p in self.particles if p.weight < (0.25 / len(self.particles))])
-        if tiny_parts < len(self.particles) * 0.5:
+        tiny_parts = np.sum(self.weights < (0.25 / len(self.weights)))
+        if tiny_parts < len(self.weights) * 0.5:
             # skip resampling
             return
 
-        random.shuffle(self.particles)
-        cumm_w = 0.0
-        threshold = 0.5 / len(self.particles)
-        new_parts: list[Particle] = []
-        print("Resampling", tiny_parts, "tiny particles")
-        for p in self.particles:
-            cumm_w += p.weight
-            while cumm_w > threshold:
-                new_parts.append(Particle(pose=p.pose, weight=1.0 / len(self.particles)))
-                cumm_w -= 1 / len(self.particles)
+        indices = list(range(len(self.weights)))
+        random.shuffle(indices)
 
-        self.particles = new_parts
+        threshold = 0.5 / len(self.weights)
+        new_xs = np.empty_like(self.xs)
+        new_ys = np.empty_like(self.ys)
+        new_thetas = np.empty_like(self.thetas)
+        cumm_w = 0.0
+        idx = 0
+        for i in range(len(self.weights)):
+            src = indices[i]
+            cumm_w += self.weights[src]
+            while cumm_w > threshold:
+                new_xs[idx] = self.xs[src]
+                new_ys[idx] = self.ys[src]
+                new_thetas[idx] = self.thetas[src]
+                idx += 1
+                cumm_w -= 1 / len(self.weights)
+
+        self.xs = new_xs
+        self.ys = new_ys
+        self.thetas = new_thetas
+        self.weights.fill(1.0 / len(self.weights))

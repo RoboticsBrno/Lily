@@ -101,13 +101,9 @@ def find_nearest(
             continue
 
         if isinstance(shape, Point):
-            dx = point.x - shape.x
-            dy = point.y - shape.y
-            candidate_dist2 = dx * dx + dy * dy
+            candidate_dist2 = dist2(point, shape)
         elif isinstance(shape, Circle):
-            dx = point.x - shape.center.x
-            dy = point.y - shape.center.y
-            center_distance = sqrt(dx * dx + dy * dy)
+            center_distance = sqrt(dist2(point, shape.center))
             distance = max(0.0, center_distance - shape.radius)
             candidate_dist2 = distance * distance
         elif isinstance(shape, Line):

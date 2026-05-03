@@ -14,6 +14,7 @@ from localization import BearDetectionConfig, BearDetector
 from localization.particle_filter import ParticleFilterConfig, ParticleFilterLocalizer
 from localization.stack import LocalizationStack
 from map.loader import load_world_from_json
+from map.raster import load_raster_map
 from util.keyboard_controller import KeyboardRobotController
 
 
@@ -81,8 +82,8 @@ def build_localization_stack(
             ticks_per_meter=1000.0,
             position_noise=0.007,
             heading_noise=0.01,
-            lidar_likelihood_stddev=0.08,
             estimate_smoothing_alpha=0.1,
+            lidar_likelihood_map=load_raster_map("data/map_lidar_likelihood.npz"),
         ),
         initial_pose=initial_pose,
     )

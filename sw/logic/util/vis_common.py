@@ -69,17 +69,21 @@ def handle_robot_control_event(
 
 
 def draw_particles(visualizer: Visualizer, localizer: ParticleFilterLocalizer) -> None:
-    for particle in localizer.particles:
+    for i in range(len(localizer.xs)):
+        x = localizer.xs[i]
+        y = localizer.ys[i]
+        yaw = localizer.thetas[i]
+        weight = localizer.weights[i]
         visualizer.draw(
-            Circle(Point(particle.pose.x, particle.pose.y), radius=(particle.weight * len(localizer.particles)) / 300),
+            Circle(Point(x, y), radius=(weight * len(localizer.xs)) / 300),
             color=(0, 100, 0),
         )
         visualizer.draw(
             Line(
-                a=Point(particle.pose.x, particle.pose.y),
+                a=Point(x, y),
                 b=Point(
-                    particle.pose.x + 0.01 * cos(particle.pose.yaw),
-                    particle.pose.y + 0.01 * sin(particle.pose.yaw),
+                    x + 0.01 * cos(yaw),
+                    y + 0.01 * sin(yaw),
                 ),
             ),
             color=(0, 100, 0),

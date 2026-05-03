@@ -21,7 +21,6 @@ class LocalizationStack:
     def on_measurements(self, measurement: Measurements) -> None:
         self.localizer.update(measurement)
         estimated_pose = self.localizer.estimate_pose()
-        print(f"{estimated_pose.x:.2} {estimated_pose.y:.2}")
 
         feature_points = self.bear_detector.update(estimated_pose, measurement.lidar)
         for point, feature in feature_points:

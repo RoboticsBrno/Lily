@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from math import hypot
 from typing import Union
 
+import numpy as np
+
 from .transforms import Transformation
 
 
@@ -19,6 +21,14 @@ ShapeItem = Union[
 class Vector:
     x: float
     y: float
+
+    def to_array(self) -> np.ndarray:
+        return np.asarray([self.x, self.y], dtype="f")
+
+    @classmethod
+    def from_array(cls, array: np.ndarray) -> "Vector":
+        x, y = np.asarray(array, dtype="f")
+        return cls(float(x), float(y))
 
     @classmethod
     def from_points(cls, start: "Point", end: "Point") -> "Vector":
@@ -43,9 +53,8 @@ class Vector:
         return Vector(self.x * factor, self.y * factor)
 
     def apply_transform(self, transform: Transformation) -> "Vector":
-        ox, oy = transform.apply_to_point(0.0, 0.0)
-        px, py = transform.apply_to_point(self.x, self.y)
-        return Vector(px - ox, py - oy)
+        x, y = transform.apply_to_vector(self.x, self.y)
+        return Vector(x=x, y=y)
 
     def to_tuple(self) -> tuple[float, float]:
         return (self.x, self.y)
@@ -58,6 +67,14 @@ class Vector:
 class Point:
     x: float
     y: float
+
+    def to_array(self) -> np.ndarray:
+        return np.asarray([self.x, self.y], dtype="f")
+
+    @classmethod
+    def from_array(cls, array: np.ndarray) -> "Point":
+        x, y = np.asarray(array, dtype="f")
+        return cls(float(x), float(y))
 
     def apply_transform(self, transform: Transformation) -> Point:
         x, y = transform.apply_to_point(self.x, self.y)
@@ -120,7 +137,6 @@ def diff(a: Point, b: Point) -> Vector:
 
 
 def sum_vec(*vectors: Vector) -> Vector:
-    result = Vector(0.0, 0.0)
-    for vector in vectors:
-        result = Vector(result.x + vector.x, result.y + vector.y)
-    return result
+    x = sum(v.x for v in vectors)
+    y = sum(v.y for v in vectors)
+    return Vector(x=x, y=y)
