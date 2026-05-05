@@ -4,6 +4,7 @@ from pathlib import Path
 
 from comm.serial_transport import SerialTransport
 from geometry.transforms import Pose
+from comm.messages import SubscribeCommand
 from util.init_common import (
     TARGET_FPS,
     build_controller,
@@ -39,6 +40,7 @@ def main() -> None:
     controller = build_controller(SerialTransport(device="/dev/ttyUSB0", baud_rate=921600))
     # controller = build_replay_player("recording_bear.csv", speed=1.0)
     keyboard = connect_keyboard_ctrl(controller)
+    controller.set_measurement_callback(localization.on_measurements)
 
     visualizer = Visualizer(title="Keyboard Controller")
 
@@ -56,6 +58,7 @@ def main() -> None:
             event,
             keyboard,
         )
+        controller.send_command(SubscribeCommand())
 
     def on_ui_tick(dt_seconds: float) -> None:
         _ = dt_seconds
@@ -76,8 +79,9 @@ def main() -> None:
     visualizer.on_tick = on_ui_tick
     visualizer.on_event = on_event
 
-    # with server:
+    visualizer.init()
     controller.start()
+    controller.send_command(SubscribeCommand())
     try:
         visualizer.run(target_fps=max(1, TARGET_FPS))
     finally:
