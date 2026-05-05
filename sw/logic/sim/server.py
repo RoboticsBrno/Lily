@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 from comm.binary_serializer import BinarySerializer
-from comm.messages import Command, SubscribeCommand
+from comm.messages import Command, EncodersMeasurement, Measurements, SubscribeCommand
 from comm.types import MessageCallback, Transport
 from geometry.shapes import Circle, ShapeGroup
 from geometry.transforms import Pose
@@ -25,6 +25,7 @@ class RobotSimulatorServer:
         robot: DifferentialDriveRobotSimulator,
         transport: Transport,
         publish_hz: float = 20.0,
+        sim_hz: float = 1000.0,
     ):
         if publish_hz <= 0.0:
             raise ValueError("publish_hz must be positive")
@@ -32,6 +33,7 @@ class RobotSimulatorServer:
         self.world = world
         self.robot = robot
         self.publish_hz = publish_hz
+        self.sim_hz = sim_hz
 
         self._serializer = BinarySerializer()
         self._transport = transport
@@ -61,22 +63,34 @@ class RobotSimulatorServer:
 
     def _serve_loop(self) -> None:
         dt = 1.0 / self.publish_hz
+        dt_sim = 1.0 / self.sim_hz
         next_publish = time.monotonic()
+        next_sim = time.monotonic()
+
+        measurements_buf: Measurements = Measurements(0, [], EncodersMeasurement(0, 0))
 
         while self._running:
             self._drain_pending_commands()
 
             now = time.monotonic()
-            if now < next_publish:
+            if now >= next_publish:
+                next_publish += dt
+                if self._subscribed:
+                    payload = self._serializer.serialize_measurements(measurements_buf)
+                    self._transport.send(payload)
+                measurements_buf.lidar = []
+
+            if now < next_sim:
                 time.sleep(min(next_publish - now, 0.005))
                 continue
 
             timestamp_ms = int(time.time() * 1000)
-            measurements = self.robot.step(dt=dt, timestamp_ms=timestamp_ms)
-            if self._subscribed:
-                payload = self._serializer.serialize_measurements(measurements)
-                self._transport.send(payload)
-            next_publish += dt
+            measurements = self.robot.step(dt=dt_sim, timestamp_ms=timestamp_ms)
+            measurements_buf.timestamp = measurements.timestamp
+            measurements_buf.encoders = measurements.encoders
+            measurements_buf.lidar.extend(measurements.lidar)
+
+            next_sim += dt_sim
 
     def _enqueue_command(self, command: Command) -> None:
         if isinstance(command, SubscribeCommand):

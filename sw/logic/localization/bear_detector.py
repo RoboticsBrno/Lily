@@ -1,18 +1,17 @@
-"""Map-difference bear detection using lidar and known world geometry."""
-
 from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass, field
-from math import inf, pi, sqrt
+from math import cos, inf, pi, sin, sqrt
 from typing import Optional
 
-from comm.messages import LidarMeasurement
 from geometry.shapes import Point, ShapeGroup, Vector, sum_vec
 from geometry.util import dist2, lerp_pt
 from geometry.transforms import Pose
 
 import numpy as np
+
+from localization.types import LidarMeasurementsRel
 
 
 @dataclass
@@ -138,20 +137,20 @@ class BearDetector:
         self._candidate_points.popleft()
         self._candidate_points.append([])
 
-    def update(self, robot_pose: Pose, measurements: list[LidarMeasurement]) \
-            -> list[tuple[Point, Vector]]:
+    def update(self, robot_pose: Pose, delta_x: float, delta_y: float,
+               delta_theta: float, measurements: LidarMeasurementsRel) -> list[tuple[Point, Vector]]:
         output = []
 
-        world_angles = np.array([measurement.angle for measurement in measurements], dtype="f")
-        world_angles = (world_angles + robot_pose.yaw) % (2 * pi)
-        distances = np.array([measurement.distance for measurement in measurements], dtype="f")
-        lidar_xs = robot_pose.x + np.cos(world_angles) * distances
-        lidar_ys = robot_pose.y + np.sin(world_angles) * distances
+        world_angles = (measurements.angles + robot_pose.yaw) % (2 * pi)
+        sin_ = sin(robot_pose.yaw)
+        cos_ = cos(robot_pose.yaw)
+        world_xs = measurements.dxs * cos_ - measurements.dys * sin_ + robot_pose.x
+        world_ys = measurements.dxs * sin_ + measurements.dys * cos_ + robot_pose.y
 
-        for i in range(len(measurements)):
-            dist = measurements[i].distance
-            x = lidar_xs[i]
-            y = lidar_ys[i]
+        for i in range(len(measurements.dxs)):
+            dist = measurements.distances[i]
+            x = world_xs[i]
+            y = world_ys[i]
             angle = world_angles[i]
             if angle > 1.5 * pi and self._last_angle < 0.5 * pi:
                 self._end_revolution()

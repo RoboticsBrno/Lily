@@ -1,13 +1,9 @@
-"""Particle filter implementation for robot localization."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
 from math import atan2, exp, pi
 import random
-from typing import Optional
 
-from comm.messages import Measurements
 from geometry import (
     ShapeGroup,
 )
@@ -16,14 +12,13 @@ from geometry.util import lerp
 
 import numpy as np
 
+from localization.types import LidarMeasurementsRel
 from map.raster import RasterMap
 
 
 @dataclass
 class ParticleFilterConfig:
     num_particles: int
-    wheel_base: float
-    ticks_per_meter: float
     position_noise: float
     heading_noise: float
     estimate_smoothing_alpha: float
@@ -32,12 +27,6 @@ class ParticleFilterConfig:
     def __post_init__(self) -> None:
         if not 0.0 <= self.estimate_smoothing_alpha <= 1.0:
             raise ValueError("estimate_smoothing_alpha must be in range [0.0, 1.0]")
-
-
-@dataclass
-class Encoders:
-    left: float
-    right: float
 
 
 @dataclass
@@ -50,7 +39,6 @@ class ParticleFilterLocalizer:
     def __init__(self, world: ShapeGroup, config: ParticleFilterConfig, initial_pose: Pose) -> None:
         self.world = world
         self.config = config
-        self.last_encoders: Optional[Encoders] = None
         self._smoothed_pose = initial_pose
 
         n = config.num_particles
@@ -61,20 +49,11 @@ class ParticleFilterLocalizer:
 
         self._normalize_weights()
 
-    def update(self, measurements: Measurements) -> None:
-        encoders = Encoders(
-            left=measurements.encoders.left_ticks / self.config.ticks_per_meter,
-            right=measurements.encoders.right_ticks / self.config.ticks_per_meter,
-        )
-
-        if self.last_encoders is not None:
-            self._apply_motion_model(encoders)
-
-        self._apply_sensor_model([(beam.angle, beam.distance) for beam in measurements.lidar])
+    def update(self, delta_x: float, delta_y: float, delta_theta: float, measurements: LidarMeasurementsRel) -> None:
+        self._apply_motion_model(delta_x, delta_y, delta_theta)
+        self._apply_sensor_model(measurements)
         self._normalize_weights()
         self._resample_particles()
-
-        self.last_encoders = encoders
 
     def estimate_pose(self) -> Pose:
         x = np.sum(self.xs * self.weights)
@@ -94,17 +73,7 @@ class ParticleFilterLocalizer:
     def get_estimate(self) -> Pose:
         return self._smoothed_pose
 
-    def _apply_motion_model(self, enc: Encoders) -> None:
-        if self.last_encoders is None:
-            return
-
-        delta_left = enc.left - self.last_encoders.left
-        delta_right = enc.right - self.last_encoders.right
-
-        delta_theta = (delta_right - delta_left) / self.config.wheel_base
-        delta_x = (delta_left + delta_right) / 2
-        delta_y = 0
-
+    def _apply_motion_model(self, delta_x: float, delta_y: float, delta_theta: float) -> None:
         movement_transform = translation(delta_x, delta_y).compose(rotation(delta_theta))
 
         n = len(self.xs)
@@ -120,15 +89,17 @@ class ParticleFilterLocalizer:
 
         self._smoothed_pose = self._smoothed_pose.to_transform().compose(movement_transform).to_pose()
 
-    def _apply_sensor_model(self, lidar_measurements: list[tuple[float, float]]) -> None:
-        lidar_measurements = list(filter(lambda m: m[1] < 8.0, lidar_measurements))
-        for _ in range(len(lidar_measurements) // 50):
-            choices = np.random.choice(len(lidar_measurements), size=len(self.xs))
-            angles = np.array([lidar_measurements[i][0] for i in choices], dtype="f")
-            distances = np.array([lidar_measurements[i][1] for i in choices], dtype="f")
+    def _apply_sensor_model(self, measurements: LidarMeasurementsRel) -> None:
+        for _ in range(len(measurements.dxs) // 50):
+            choices = np.random.choice(len(measurements.dxs), size=len(self.xs))
+            dxs = measurements.dxs[choices]
+            dys = measurements.dys[choices]
 
-            lidar_xs = self.xs + np.cos(self.thetas + angles) * distances
-            lidar_ys = self.ys + np.sin(self.thetas + angles) * distances
+            sins = np.sin(self.thetas)
+            coss = np.cos(self.thetas)
+
+            lidar_xs = self.xs + coss * dxs - sins * dys
+            lidar_ys = self.ys + sins * dxs + coss * dys
             likelihoods = self.config.lidar_likelihood_map.get_many(lidar_xs, lidar_ys)
             self.weights *= likelihoods
 

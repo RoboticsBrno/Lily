@@ -12,7 +12,7 @@ from geometry.shapes import Circle, Point
 from geometry.transforms import Pose
 from localization import BearDetectionConfig, BearDetector
 from localization.particle_filter import ParticleFilterConfig, ParticleFilterLocalizer
-from localization.stack import LocalizationStack
+from localization.stack import LocalizationStack, RobotParams
 from map.loader import load_world_from_json
 from map.raster import load_raster_map
 from util.keyboard_controller import KeyboardRobotController
@@ -78,10 +78,8 @@ def build_localization_stack(
         world=world,
         config=ParticleFilterConfig(
             num_particles=PARTICLE_COUNT,
-            wheel_base=WHEEL_BASE,
-            ticks_per_meter=1000.0,
-            position_noise=0.007,
-            heading_noise=0.01,
+            position_noise=0.004,
+            heading_noise=0.007,
             estimate_smoothing_alpha=0.1,
             lidar_likelihood_map=load_raster_map("data/map_lidar_likelihood.npz"),
         ),
@@ -92,4 +90,13 @@ def build_localization_stack(
         config=BearDetectionConfig(),
     )
 
-    return LocalizationStack(world, localizer, bear_detector, LIDAR_HISTORY)
+    return LocalizationStack(
+        world,
+        localizer,
+        bear_detector,
+        RobotParams(
+            wheel_base=WHEEL_BASE,
+            ticks_per_meter=1000.0,
+        ),
+        LIDAR_HISTORY
+    )
