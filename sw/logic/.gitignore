@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 .venv/
 *.csv
+results
+__old
+data/*.png
+data/*.npz
