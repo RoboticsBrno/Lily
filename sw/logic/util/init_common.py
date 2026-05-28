@@ -21,9 +21,7 @@ from util.keyboard_controller import KeyboardRobotController
 TARGET_FPS = 60
 SIM_PORT = 5005
 CONTROLLER_RECEIVE_PORT = 5006
-LIDAR_MAX_DISTANCE = 8.0
-LIDAR_HZ = 10
-LIDAR_SAMPLE = 3900
+LIDAR_OFFSET = Vector(-0.05, 0)
 LIDAR_HISTORY = ceil(LIDAR_SAMPLE / LIDAR_HZ / 2)
 WHEEL_BASE = 0.25
 PARTICLE_COUNT = 200
@@ -92,6 +90,7 @@ def build_localization_stack(
 
     return LocalizationStack(
         world,
+        LIDAR_OFFSET,
         localizer,
         bear_detector,
         RobotParams(

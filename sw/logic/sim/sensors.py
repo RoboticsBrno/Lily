@@ -6,7 +6,7 @@ import random
 
 from comm.messages import EncodersMeasurement, LidarMeasurement
 from geometry.raycast import RaycastGroup, RaycastGroupItem, raycast_from_angle
-from geometry.shapes import Circle, Point, ShapeGroup
+from geometry.shapes import Circle, Point, ShapeGroup, Vector
 from geometry.transforms import Pose
 
 
@@ -17,6 +17,7 @@ class LidarSensorConfig:
     angle_min: float = -pi
     angle_max: float = pi
     max_distance: float = 8.0
+    lidar_offset: Vector = Vector(0.0, 0.0)
     world_max_incidence_angle: float = pi / 2.0
     bear_max_incidence_angle: float = pi / 2.0
     distance_noise_stddev: float = 0.0
@@ -127,7 +128,11 @@ class LidarSensorSimulator:
         if sample_count <= 0:
             return []
 
-        origin = Point(pose.x, pose.y)
+        lidar_pos = pose.to_transform().apply_to_point(
+            self.config.lidar_offset.x,
+            self.config.lidar_offset.y,
+        )
+        origin = Point(lidar_pos[0], lidar_pos[1])
 
         measurements: list[LidarMeasurement] = []
         for _ in range(sample_count):

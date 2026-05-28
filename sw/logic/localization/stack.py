@@ -19,14 +19,16 @@ class RobotParams:
 
 class LocalizationStack:
     world: ShapeGroup
+    lidar_offset: Vector
     localizer: ParticleFilterLocalizer
     bear_detector: BearDetector
     lidar_history: deque[tuple[Point, Vector]]
     last_encoders: Optional[Encoders] = None
     params: RobotParams
 
-    def __init__(self, world: ShapeGroup, localizer: ParticleFilterLocalizer, bear_detector: BearDetector, robot_params: RobotParams, history_len: int) -> None:
+    def __init__(self, world: ShapeGroup, lidar_offset: Vector, localizer: ParticleFilterLocalizer, bear_detector: BearDetector, robot_params: RobotParams, history_len: int) -> None:
         self.world = world
+        self.lidar_offset = lidar_offset
         self.localizer = localizer
         self.bear_detector = bear_detector
         self.lidar_history = deque(maxlen=history_len)
@@ -53,10 +55,18 @@ class LocalizationStack:
 
         self.last_encoders = enc
 
-        lidar_angles = np.array([beam.angle for beam in measurements.lidar], dtype="f") + np.linspace(-delta_theta, 0, len(measurements.lidar), dtype="f")
+        n_beams = len(measurements.lidar)
+        lidar_angles = np.array([beam.angle for beam in measurements.lidar], dtype="f") + np.linspace(-delta_theta, 0, n_beams, dtype="f")
         lidar_distances = np.array([beam.distance for beam in measurements.lidar], dtype="f")
-        lidar_dxs = np.cos(lidar_angles) * lidar_distances + np.linspace(-delta_x, 0, len(lidar_angles), dtype="f")
-        lidar_dys = np.sin(lidar_angles) * lidar_distances + np.linspace(-delta_y, 0, len(lidar_angles), dtype="f")
+
+        delta_theta_i = np.linspace(delta_theta, 0, n_beams, dtype="f")
+        ox = self.lidar_offset.x
+        oy = self.lidar_offset.y
+        ox_i = ox * np.cos(delta_theta_i) + oy * np.sin(delta_theta_i)
+        oy_i = -ox * np.sin(delta_theta_i) + oy * np.cos(delta_theta_i)
+
+        lidar_dxs = np.cos(lidar_angles) * lidar_distances + np.linspace(-delta_x, 0, n_beams, dtype="f") + ox_i
+        lidar_dys = np.sin(lidar_angles) * lidar_distances + np.linspace(-delta_y, 0, n_beams, dtype="f") + oy_i
 
         measurements_rel = LidarMeasurementsRel(lidar_dxs, lidar_dys, lidar_angles, lidar_distances)
 
