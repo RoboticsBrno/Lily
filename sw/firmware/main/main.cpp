@@ -44,9 +44,9 @@ auto lily = []() {
         Claws(),
         RpLidar(
             UART_NUM_1,
-            GPIO_NUM_9,
-            GPIO_NUM_17,
-            GPIO_NUM_1,
+            GPIO_NUM_21,
+            GPIO_NUM_47,
+            GPIO_NUM_14,
             LEDC_CHANNEL_4,
             LEDC_TIMER_0
         )

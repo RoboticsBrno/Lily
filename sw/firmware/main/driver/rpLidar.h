@@ -13,6 +13,8 @@
 #include "driver/uart.h"
 #include "esp_err.h"
 
+#define PWM_CONTROL 0
+
 
 struct Measurement {
     uint16_t distance;
@@ -24,6 +26,7 @@ struct Measurement {
 class RpLidar {
     uart_port_t _uart;
     ledc_channel_t _motorChannel;
+    gpio_num_t _motorPin;
     static constexpr int BAUD_RATE = 115200;
     static constexpr int RX_BUFFER_SIZE = 10240;
     static constexpr int TX_BUFFER_SIZE = 0;
@@ -38,7 +41,8 @@ public:
         ledc_timer_t motorTimer
     ):
         _uart(uartUnit),
-        _motorChannel(motorChannel)
+        _motorChannel(motorChannel),
+        _motorPin(motorPin)
     {
         uart_config_t config {
             .baud_rate = BAUD_RATE,
@@ -53,10 +57,11 @@ public:
         uart_set_pin(_uart, tx, rx, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
         uart_driver_install(_uart, RX_BUFFER_SIZE, TX_BUFFER_SIZE, 0, nullptr, 0);
 
+#if PWM_CONTROL
         ledc_channel_config_t channelConfig = {
-            .gpio_num = motorPin,
+            .gpio_num = _motorPin,
             .speed_mode = LEDC_LOW_SPEED_MODE,
-            .channel = motorChannel,
+            .channel = _motorChannel,
             .intr_type = LEDC_INTR_DISABLE,
             .timer_sel = motorTimer,
             .duty = 0,
@@ -64,25 +69,28 @@ public:
             .flags = {},
         };
         ledc_channel_config(&channelConfig);
+#else
+        gpio_set_direction(_motorPin, GPIO_MODE_OUTPUT);
+        gpio_set_level(_motorPin, 0);
+#endif
     }
 
     RpLidar(RpLidar const&) = delete;
     RpLidar(RpLidar&& other):
         _uart(other._uart),
-        _motorChannel(other._motorChannel)
+        _motorChannel(other._motorChannel),
+        _motorPin(other._motorPin)
     {
         other._uart = UART_NUM_MAX;
     }
 
-    ~RpLidar() {
-        if (_uart != UART_NUM_MAX) {
-            uart_driver_delete(_uart);
-        }
-    }
-
     void start() {
+#if PWM_CONTROL
         ledc_set_duty(LEDC_LOW_SPEED_MODE, _motorChannel, 1024);
         ledc_update_duty(LEDC_LOW_SPEED_MODE, _motorChannel);
+#else
+        gpio_set_level(_motorPin, 1);
+#endif
 
         std::array<uint8_t, 2> startStop{{0xA5, 0x25}};
         uart_write_bytes(_uart, startStop.data(), startStop.size());
@@ -102,6 +110,14 @@ public:
     void stop() {
         std::array<uint8_t, 2> stop{{0xA5, 0x25}};
         uart_write_bytes(_uart, stop.data(), stop.size());
+
+#if PWM_CONTROL
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, _motorChannel, 0);
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, _motorChannel);
+#else
+        gpio_set_level(_motorPin, 0);
+#endif
+
         vTaskDelay(pdMS_TO_TICKS(50));
     }
 
