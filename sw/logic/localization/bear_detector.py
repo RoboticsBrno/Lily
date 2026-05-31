@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass, field
+from itertools import chain
 from math import cos, inf, pi, sin, sqrt
 from typing import Optional
 
@@ -12,12 +13,22 @@ from geometry.transforms import Pose
 import numpy as np
 
 from localization.types import LidarMeasurementsRel
+from params import (
+    BEAR_CONFIDENCE_DECREMENT,
+    BEAR_CONFIDENCE_INCREMENT,
+    BEAR_FEATURE_NORM_BIAS,
+    BEAR_LERP_FACTOR,
+    BEAR_MAX_CONFIDENCE,
+)
+
+
+KEEP_POINTS_ITERS = 1
 
 
 @dataclass
 class DBSCANConfig:
-    eps: float = 0.05
-    min_samples: int = 3
+    eps: float
+    min_samples: int
 
 
 class DBSCAN:
@@ -79,14 +90,18 @@ class DBSCAN:
 
 @dataclass
 class BearDetectionConfig:
-    min_distance: float = 0.1
-    max_distance: float = 2
-    feature_detection_points: int = 7
-    feature_threshold: float = 0.015
-    line_covariance_ratio_threshold: float = 0.01
-    min_samples: int = feature_detection_points // 2 + 1
-    dbscan_config: DBSCANConfig = field(default_factory=DBSCANConfig)
-    match_threshold: float = 0.3
+    min_distance: float
+    max_distance: float
+    feature_detection_points: int
+    feature_threshold: float
+    line_covariance_ratio_threshold: float
+    min_samples: int = field(init=False)
+    dbscan_config: DBSCANConfig
+    match_threshold: float
+    confidence_threshold: float
+
+    def __post_init__(self):
+        object.__setattr__(self, 'min_samples', self.feature_detection_points // 2 + 1)
 
 
 @dataclass
@@ -100,7 +115,7 @@ class BearDetector:
         self.world = world
         self.config = config
         self._scan_buffer: deque[tuple[Point, float, float]] = deque(maxlen=1000)
-        self._candidate_points: deque[list[Point]] = deque([[]] * 1)
+        self._candidate_points: deque[list[Point]] = deque([[]] * KEEP_POINTS_ITERS)
         self._waiting: deque[tuple[Point, float, float]] \
             = deque(([(Point(0, 0), 0.0, 1.0)] * (config.feature_detection_points)))
         self._last_angle: float = 0.0
@@ -110,26 +125,26 @@ class BearDetector:
 
     def _end_revolution(self) -> None:
         # end of revolution
-        points = self._candidate_points[-1]
+        points = list(chain(*self._candidate_points))
         clusters = self._scan(points)
         matched, new = self._match_detections([point for point, _ in clusters])
 
         purge: set[int] = set()
         for idx, match in enumerate(matched):
             if match is not None:
-                self._candidate_detections[idx].position = lerp_pt(self._candidate_detections[idx].position, match, 0.5)
-                self._candidate_detections[idx].confidence = min(5.0, self._candidate_detections[idx].confidence + 1.0)
+                self._candidate_detections[idx].position = lerp_pt(self._candidate_detections[idx].position, match, BEAR_LERP_FACTOR)
+                self._candidate_detections[idx].confidence = min(BEAR_MAX_CONFIDENCE, self._candidate_detections[idx].confidence + BEAR_CONFIDENCE_INCREMENT)
             else:
-                self._candidate_detections[idx].confidence = max(0.0, self._candidate_detections[idx].confidence - 1.0)
+                self._candidate_detections[idx].confidence = max(0.0, self._candidate_detections[idx].confidence - BEAR_CONFIDENCE_DECREMENT)
                 if self._candidate_detections[idx].confidence <= 0.0:
                     purge.add(idx)
         for point in new:
-            self._candidate_detections.append(BearDetection(position=point, confidence=1.0))
+            self._candidate_detections.append(BearDetection(position=point, confidence=BEAR_CONFIDENCE_INCREMENT))
 
         self._candidate_detections = [d for idx, d in enumerate(self._candidate_detections) if idx not in purge]
         if self._candidate_detections:
             best = max(self._candidate_detections, key=lambda d: d.confidence)
-            if best.confidence >= 3.0:
+            if best.confidence >= self.config.confidence_threshold:
                 self._last_detection = best
         else:
             self._last_detection = None
@@ -174,7 +189,7 @@ class BearDetector:
             self._waiting.popleft()
 
             mid_pt, mid_angle, mid_distance = self._waiting[mid]
-            feat_vec = self._feat_vec * (1 / (self.config.feature_detection_points * (mid_distance + 0.2)))
+            feat_vec = self._feat_vec * (1 / (self.config.feature_detection_points * (mid_distance + BEAR_FEATURE_NORM_BIAS)))
             feat_val = float(np.linalg.norm(feat_vec))
             if feat_val > self.config.feature_threshold:
                 self._candidate_points[-1].append(mid_pt)

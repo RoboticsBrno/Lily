@@ -22,7 +22,7 @@ class RaycastHit:
 class RaycastGroupItem:
 
     shape: ShapeItem
-    max_angle_of_incidence: float = pi / 2.0
+    max_angle_of_incidence: float
 
     def __post_init__(self) -> None:
         if self.max_angle_of_incidence < 0.0 or self.max_angle_of_incidence > (pi / 2.0):

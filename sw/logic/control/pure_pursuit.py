@@ -5,12 +5,13 @@ from typing import Optional
 from geometry.shapes import Point
 from geometry.transforms import Pose
 from geometry.util import wrap_angle
+from params import PP_BASE_POWER, PP_STEP_DISTANCE
 
 
 @dataclass(frozen=True)
 class PurePursuitConfig:
     lookahead_distance: float
-    steering_gain: float = 4
+    steering_gain: float
 
 
 @dataclass(frozen=True)
@@ -26,13 +27,19 @@ class PurePursuitController:
         self.allow_reverse = True
         self.current_segment = 0
         self._step_t = 0.0
-        self._step_distance = 0.05
+        self._step_distance = PP_STEP_DISTANCE
 
     def update_plan(self, path: list[Point], allow_reverse: bool) -> None:
         self.path = list(path)
         self.allow_reverse = allow_reverse
         self.current_segment = 0
         self._step_t = 0.0
+
+    def at_goal(self, pose: Pose, tolerance: float) -> bool:
+        if not self.path:
+            return True
+        goal = self.path[-1]
+        return hypot(goal.x - pose.x, goal.y - pose.y) <= tolerance
 
     def compute(self, pose: Pose) -> PurePursuitOutput:
         if not self.path:
@@ -114,7 +121,7 @@ class PurePursuitController:
         steering_angle: float,
         drive_direction: float = 1.0,
     ) -> PurePursuitOutput:
-        base_power = 1.0
+        base_power = PP_BASE_POWER
         steering = (steering_angle / pi) * self.config.steering_gain
         turn = max(-1.0, min(1.0, steering))
 

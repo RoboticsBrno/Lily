@@ -14,6 +14,8 @@ from util.init_common import (
     create_default_bear,
     resolve_map_path,
 )
+from params import ROBOT_BODY_RADIUS
+
 from util.vis_common import (
     draw_bear,
     draw_bear_detection,
@@ -25,9 +27,6 @@ from util.vis_common import (
     handle_ui_control_event,
 )
 from util.visualizer import Visualizer
-
-
-ROBOT_BODY_RADIUS = 0.1
 
 
 def main() -> None:

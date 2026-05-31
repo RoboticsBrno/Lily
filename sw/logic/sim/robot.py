@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from math import cos, sin
-import math
 from typing import Optional
 
 from comm.messages import ClawCommand, Command, Measurements, MoveCommand
@@ -19,11 +18,11 @@ from .sensors import (
 @dataclass(frozen=True)
 class RobotConfig:
     wheel_base: float
-    diameter: float = 0.25
-    claw_offset: Vector = Vector(0.08, 0.13)
-    claw_length: float = 0.15
-    claw_open_angle: float = 0.0
-    claw_closed_angle: float = 0.25 * math.pi
+    radius: float
+    claw_offset: Vector
+    claw_length: float
+    claw_open_angle: float
+    claw_closed_angle: float
 
     def __post_init__(self) -> None:
         if self.wheel_base <= 0.0:
@@ -51,7 +50,7 @@ class DifferentialDriveRobotSimulator:
         pose_to_draw = self.pose if pose is None else pose
         return Circle(
             center=Point(pose_to_draw.x, pose_to_draw.y),
-            radius=self.config.diameter * 0.5,
+            radius=self.config.radius,
         )
 
     def get_claw_segments(self) -> tuple[Line, Line]:

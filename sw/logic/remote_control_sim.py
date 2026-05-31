@@ -1,28 +1,20 @@
 from __future__ import annotations
 
-from math import cos, pi, sin
+from math import cos, sin
 from pathlib import Path
 
 from comm.udp_transport import UdpTransport
 from geometry.shapes import Line, Point
 from comm.messages import SubscribeCommand
-from sim.robot import RobotConfig
-from sim.sensors import LidarSensorConfig, MotorConfig
-from sim.server import create_server_from_map
+from params import ROBOT_BODY_RADIUS
 from util.init_common import (
     CONTROLLER_RECEIVE_PORT,
-    LIDAR_HZ,
-    LIDAR_MAX_DISTANCE,
-    LIDAR_OFFSET,
-    LIDAR_SAMPLE,
     SIM_PORT,
     TARGET_FPS,
-    WHEEL_BASE,
     build_controller,
     connect_keyboard_ctrl,
     build_localization_stack,
-    # build_replay_player,
-    create_default_bear,
+    make_default_sim,
     resolve_map_path,
 )
 from util.vis_common import (
@@ -38,40 +30,11 @@ from util.vis_common import (
 from util.visualizer import Visualizer
 
 
-ROBOT_BODY_RADIUS = 0.125
-
-
 def main() -> None:
     repo_root = Path(__file__).resolve().parent
     map_path = resolve_map_path(repo_root, "data/map_bear_rescue.json")
 
-    bear = create_default_bear()
-
-    server = create_server_from_map(
-        map_path=map_path,
-        robot_config=RobotConfig(wheel_base=WHEEL_BASE),
-        lidar_config=LidarSensorConfig(
-            rotation_speed_hz=LIDAR_HZ,
-            measurement_frequency_hz=LIDAR_SAMPLE,
-            max_distance=LIDAR_MAX_DISTANCE,
-            lidar_offset=LIDAR_OFFSET,
-            bear_max_incidence_angle=pi / 4,
-            distance_noise_stddev=0.003,
-            angle_noise_stddev=0.001,
-            random_distance_probability=0.1,
-        ),
-        motor_config=MotorConfig(
-            ticks_per_meter=1000.0,
-            max_speed=0.7,
-        ),
-        bear=bear,
-        transport=UdpTransport(
-            host="127.0.0.1",
-            port=CONTROLLER_RECEIVE_PORT,
-            receive_port=SIM_PORT,
-        ),
-        publish_hz=20.0,
-    )
+    server, bear = make_default_sim(map_path)
 
     visualizer = Visualizer(title="Keyboard Controller")
 

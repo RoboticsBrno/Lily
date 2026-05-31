@@ -16,6 +16,7 @@ from map.loader import load_world_from_json
 
 from .robot import DifferentialDriveRobotSimulator, RobotConfig
 from .sensors import LidarSensorConfig, MotorConfig
+from params import SIM_PUBLISH_HZ, SIM_SIM_HZ
 
 
 class RobotSimulatorServer:
@@ -24,8 +25,8 @@ class RobotSimulatorServer:
         world: ShapeGroup,
         robot: DifferentialDriveRobotSimulator,
         transport: Transport,
-        publish_hz: float = 20.0,
-        sim_hz: float = 1000.0,
+        publish_hz: float = SIM_PUBLISH_HZ,
+        sim_hz: float = SIM_SIM_HZ,
     ):
         if publish_hz <= 0.0:
             raise ValueError("publish_hz must be positive")
@@ -118,7 +119,7 @@ def create_server_from_map(
     motor_config: MotorConfig,
     bear: Circle,
     transport: Transport,
-    publish_hz: float = 20.0,
+    publish_hz: float = SIM_PUBLISH_HZ,
 ) -> RobotSimulatorServer:
     wall_world = load_world_from_json(map_path)
     display_world = ShapeGroup(shapes=[*wall_world.shapes, bear])
@@ -146,6 +147,7 @@ class _SimulatorCommandCallback(MessageCallback):
     def on_message(self, data: bytes) -> None:
         try:
             command = self._server._serializer.deserialize_command(data)
+            print(f"Received command: {command}")
         except Exception:
             return
 

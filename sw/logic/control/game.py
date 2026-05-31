@@ -1,7 +1,6 @@
 
 
 from enum import Enum, auto
-from math import hypot
 import time
 from typing import Optional
 
@@ -15,9 +14,12 @@ from geometry.util import dist2
 from localization.bear_detector import BearDetection
 from localization.stack import LocalizationStack
 
-
-GOAL_TOLERANCE_M = 0.08
-MAX_SPEED = 1
+from params import (
+    GAME_CLAW_CLOSE_DELAY,
+    GAME_GOAL_TOLERANCE,
+    GAME_MAX_SPEED,
+    GAME_STARTUP_DELAY,
+)
 
 
 def _build_startup_s_path() -> list[Point]:
@@ -83,20 +85,14 @@ class GameStateMachine:
         )
         self.pursuit.update_plan(self.planned_path, False)
 
-    def _at_goal(self, estimated: Pose) -> bool:
-        if not self.planned_path:
-            return True
-        goal = self.planned_path[-1]
-        return hypot(goal.x - estimated.x, goal.y - estimated.y) <= GOAL_TOLERANCE_M
-
     def _stop_command(self) -> MoveCommand:
         return MoveCommand(left_speed=0, right_speed=0)
 
     def _follow_path(self, estimated: Pose) -> MoveCommand:
         control = self.pursuit.compute(estimated)
         return MoveCommand(
-            left_speed=_clamp_scale(control.left_power, -1, 1, MAX_SPEED),
-            right_speed=_clamp_scale(control.right_power, -1, 1, MAX_SPEED),
+            left_speed=_clamp_scale(control.left_power, -1, 1, GAME_MAX_SPEED),
+            right_speed=_clamp_scale(control.right_power, -1, 1, GAME_MAX_SPEED),
         )
 
     def loop(self) -> None:
@@ -107,7 +103,7 @@ class GameStateMachine:
             return
 
         if self.state == PursuitState.INIT:
-            self.delay_end = time.time() + 2.0
+            self.delay_end = time.time() + GAME_STARTUP_DELAY
             self.state = PursuitState.START
             self.controller.send_command(ClawCommand(ClawAction.CLOSE))
             return
@@ -130,9 +126,9 @@ class GameStateMachine:
             return
 
         if self.state == PursuitState.SEEKING_DETECTED_BEAR:
-            if self._at_goal(estimated):
+            if self.pursuit.at_goal(estimated, GAME_GOAL_TOLERANCE):
                 self.state = PursuitState.CAPTURE_BEAR
-                self.delay_end = time.time() + 2.0
+                self.delay_end = time.time() + GAME_CLAW_CLOSE_DELAY
                 self.controller.send_command(self._stop_command())
                 self.controller.send_command(ClawCommand(ClawAction.CLOSE))
                 return
@@ -149,7 +145,7 @@ class GameStateMachine:
             return
 
         if self.state == PursuitState.SEEKING_RETURN_PATH:
-            if self._at_goal(estimated):
+            if self.pursuit.at_goal(estimated, GAME_GOAL_TOLERANCE):
                 self.state = PursuitState.FINISHED
                 self.controller.send_command(self._stop_command())
                 return

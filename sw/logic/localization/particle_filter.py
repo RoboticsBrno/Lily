@@ -14,6 +14,11 @@ import numpy as np
 
 from localization.types import LidarMeasurementsRel
 from map.raster import RasterMap
+from params import (
+    PF_LIDAR_SUBSAMPLING_FACTOR,
+    PF_RESAMPLE_TINY_THRESH,
+    PF_RESAMPLE_TINY_WEIGHT,
+)
 
 
 @dataclass
@@ -90,7 +95,7 @@ class ParticleFilterLocalizer:
         self._smoothed_pose = self._smoothed_pose.to_transform().compose(movement_transform).to_pose()
 
     def _apply_sensor_model(self, measurements: LidarMeasurementsRel) -> None:
-        for _ in range(len(measurements.dxs) // 50):
+        for _ in range(len(measurements.dxs) // PF_LIDAR_SUBSAMPLING_FACTOR):
             choices = np.random.choice(len(measurements.dxs), size=len(self.xs))
             dxs = measurements.dxs[choices]
             dys = measurements.dys[choices]
@@ -103,11 +108,6 @@ class ParticleFilterLocalizer:
             likelihoods = self.config.lidar_likelihood_map.get_many(lidar_xs, lidar_ys)
             self.weights *= likelihoods
 
-    def _gaussian(self, mu: float, sigma: float, x: float) -> float:
-        if sigma <= 0:
-            raise ValueError("Sigma must be positive")
-        return (1.0 / (sigma * (2.0 * pi) ** 0.5)) * exp(-0.5 * ((x - mu) / sigma) ** 2) + 0.2
-
     def _normalize_weights(self) -> None:
         total_weight: float = np.sum(self.weights)
         if total_weight == 0.0:
@@ -117,15 +117,15 @@ class ParticleFilterLocalizer:
         self.weights /= total_weight
 
     def _resample_particles(self) -> None:
-        tiny_parts = np.sum(self.weights < (0.25 / len(self.weights)))
-        if tiny_parts < len(self.weights) * 0.5:
+        tiny_parts = np.sum(self.weights < (PF_RESAMPLE_TINY_WEIGHT / len(self.weights)))
+        if tiny_parts < len(self.weights) * PF_RESAMPLE_TINY_THRESH:
             # skip resampling
             return
 
         indices = list(range(len(self.weights)))
         random.shuffle(indices)
 
-        threshold = 0.5 / len(self.weights)
+        threshold = PF_RESAMPLE_TINY_THRESH / len(self.weights)
         new_xs = np.empty_like(self.xs)
         new_ys = np.empty_like(self.ys)
         new_thetas = np.empty_like(self.thetas)

@@ -12,17 +12,17 @@ from geometry.transforms import Pose
 
 @dataclass(frozen=True)
 class LidarSensorConfig:
-    rotation_speed_hz: float = 10.0
-    measurement_frequency_hz: float = 400.0
-    angle_min: float = -pi
-    angle_max: float = pi
-    max_distance: float = 8.0
-    lidar_offset: Vector = Vector(0.0, 0.0)
-    world_max_incidence_angle: float = pi / 2.0
-    bear_max_incidence_angle: float = pi / 2.0
-    distance_noise_stddev: float = 0.0
-    angle_noise_stddev: float = 0.0
-    random_distance_probability: float = 0.0
+    rotation_speed_hz: float
+    measurement_frequency_hz: float
+    angle_min: float
+    angle_max: float
+    max_distance: float
+    lidar_offset: Vector
+    world_max_incidence_angle: float
+    bear_max_incidence_angle: float
+    distance_noise_stddev: float
+    angle_noise_stddev: float
+    random_distance_probability: float
 
     def __post_init__(self) -> None:
         if self.rotation_speed_hz <= 0.0:
@@ -47,8 +47,8 @@ class LidarSensorConfig:
 
 @dataclass(frozen=True)
 class MotorConfig:
-    ticks_per_meter: float = 1000.0
-    max_speed: float = 0.6
+    ticks_per_meter: float
+    max_speed: float
 
     def __post_init__(self) -> None:
         if self.ticks_per_meter <= 0.0:
@@ -160,14 +160,14 @@ class LidarSensorSimulator:
 
             if hit is not None and self.config.distance_noise_stddev > 0.0:
                 distance += random.gauss(0.0, self.config.distance_noise_stddev)
-                distance = _clamp(distance, 0.0, self.config.max_distance)
 
-            measurements.append(
-                LidarMeasurement(
-                    angle=measured_angle,
-                    distance=distance,
+            if distance < self.config.max_distance:
+                measurements.append(
+                    LidarMeasurement(
+                        angle=measured_angle,
+                        distance=distance,
+                    )
                 )
-            )
 
             self._current_angle = self._wrap_angle(
                 self._current_angle + self._angle_increment
