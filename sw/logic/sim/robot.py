@@ -7,6 +7,7 @@ from typing import Optional
 from comm.messages import ClawCommand, Command, Measurements, MoveCommand
 from geometry.shapes import Circle, Line, Point, ShapeGroup, Vector
 from geometry.transforms import Pose, rotation, translation
+from geometry.util import find_nearest
 from .sensors import (
     LidarSensorConfig,
     LidarSensorSimulator,
@@ -39,6 +40,7 @@ class DifferentialDriveRobotSimulator:
         initial_pose: Pose,
         bear: Circle,
     ):
+        self.world = world
         self.config = config
         self.lidar_sensor = LidarSensorSimulator(world, lidar_config, bear)
         self.motor = MotorSimulator(config=motor_config)
@@ -102,8 +104,18 @@ class DifferentialDriveRobotSimulator:
         linear_speed = 0.5 * (left_speed + right_speed)
         angular_speed = (right_speed - left_speed) / self.config.wheel_base
 
-        self.pose.x += linear_speed * cos(self.pose.yaw) * dt
-        self.pose.y += linear_speed * sin(self.pose.yaw) * dt
+        new_x = self.pose.x + linear_speed * cos(self.pose.yaw) * dt
+        new_y = self.pose.y + linear_speed * sin(self.pose.yaw) * dt
+
+        if self.world.shapes:
+            _, nearest_dist = find_nearest(self.world, Point(new_x, new_y))
+            if nearest_dist >= self.config.radius:
+                self.pose.x = new_x
+                self.pose.y = new_y
+        else:
+            self.pose.x = new_x
+            self.pose.y = new_y
+
         self.pose.yaw += angular_speed * dt
         lidar = self.lidar_sensor.step(
             dt=dt,

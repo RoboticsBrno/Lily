@@ -57,6 +57,7 @@ from params import (
     SIM_PUBLISH_HZ,
     ROBOT_BODY_RADIUS,
     PF_HEADING_NOISE,
+    PF_BLOCKED_HEADING_NOISE,
     PF_NUM_PARTICLES,
     PF_POSITION_NOISE,
     PF_SMOOTHING_ALPHA,
@@ -125,8 +126,10 @@ def build_localization_stack(
             num_particles=PF_NUM_PARTICLES,
             position_noise=PF_POSITION_NOISE,
             heading_noise=PF_HEADING_NOISE,
+            blocked_heading_noise=PF_BLOCKED_HEADING_NOISE,
             estimate_smoothing_alpha=PF_SMOOTHING_ALPHA,
             lidar_likelihood_map=load_raster_map("data/map_lidar_likelihood.npz"),
+            motion_map=load_raster_map("data/map_motion_model.npz"),
         ),
         initial_pose=initial_pose,
     )

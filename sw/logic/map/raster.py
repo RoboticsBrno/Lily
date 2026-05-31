@@ -36,6 +36,15 @@ class RasterMap:
         result[valid_mask] = self.data[y_indices[valid_mask], x_indices[valid_mask]]
         return result
 
+    def copy(self) -> "RasterMap":
+        return RasterMap(
+            offset_x=self.offset_x,
+            offset_y=self.offset_y,
+            scale=self.scale,
+            data=self.data.copy(),
+            default_value=self.default_value,
+        )
+
 
 def make_distance_map(map: VectorMap, scale: float, padding: float) -> RasterMap:
     x1, y1, x2, y2 = shape_bounds(map)

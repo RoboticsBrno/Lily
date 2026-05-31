@@ -26,8 +26,10 @@ class ParticleFilterConfig:
     num_particles: int
     position_noise: float
     heading_noise: float
+    blocked_heading_noise: float
     estimate_smoothing_alpha: float
     lidar_likelihood_map: RasterMap
+    motion_map: RasterMap
 
     def __post_init__(self) -> None:
         if not 0.0 <= self.estimate_smoothing_alpha <= 1.0:
@@ -88,11 +90,27 @@ class ParticleFilterLocalizer:
 
         cos_t = np.cos(self.thetas)
         sin_t = np.sin(self.thetas)
-        self.xs += cos_t * delta_x - sin_t * delta_y + position_noise_x
-        self.ys += sin_t * delta_x + cos_t * delta_y + position_noise_y
-        self.thetas = (self.thetas + delta_theta + heading_noise + pi) % (2 * pi) - pi
+        proposed_xs = self.xs + cos_t * delta_x - sin_t * delta_y + position_noise_x
+        proposed_ys = self.ys + sin_t * delta_x + cos_t * delta_y + position_noise_y
+        proposed_thetas = self.thetas + delta_theta + heading_noise
 
-        self._smoothed_pose = self._smoothed_pose.to_transform().compose(movement_transform).to_pose()
+        motion_values = self.config.motion_map.get_many(proposed_xs, proposed_ys)
+        valid_mask = motion_values > 0
+
+        blocked_heading_noise = np.random.normal(
+            0.0, self.config.blocked_heading_noise, size=n
+        )
+        extra_heading_noise = np.where(valid_mask, 0.0, blocked_heading_noise)
+        proposed_thetas += extra_heading_noise
+
+        self.xs = np.where(valid_mask, proposed_xs, self.xs)
+        self.ys = np.where(valid_mask, proposed_ys, self.ys)
+
+        self.thetas = (proposed_thetas + pi) % (2 * pi) - pi
+
+        proposed_smoothed = self._smoothed_pose.to_transform().compose(movement_transform).to_pose()
+        if self.config.motion_map.get(proposed_smoothed.x, proposed_smoothed.y) > 0:
+            self._smoothed_pose = proposed_smoothed
 
     def _apply_sensor_model(self, measurements: LidarMeasurementsRel) -> None:
         for _ in range(len(measurements.dxs) // PF_LIDAR_SUBSAMPLING_FACTOR):

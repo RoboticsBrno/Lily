@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 from comm.serial_transport import SerialTransport
@@ -14,7 +15,7 @@ from util.init_common import (
     create_default_bear,
     resolve_map_path,
 )
-from params import ROBOT_BODY_RADIUS
+from params import INITIAL_POSE_X, INITIAL_POSE_Y, ROBOT_BODY_RADIUS
 
 from util.vis_common import (
     draw_bear,
@@ -35,9 +36,9 @@ def main() -> None:
 
     bear = create_default_bear()
 
-    localization = build_localization_stack(map_path, Pose(0.7, 2, 0.0))
+    localization = build_localization_stack(map_path, Pose(INITIAL_POSE_X, INITIAL_POSE_Y, math.pi / 2))
     controller = build_controller(SerialTransport(device="/dev/ttyUSB0", baud_rate=921600))
-    # controller = build_replay_player("recording_bear.csv", speed=1.0)
+    # controller = build_replay_controller("recording.csv", speed=1.0)
     keyboard = connect_keyboard_ctrl(controller)
     controller.set_measurement_callback(localization.on_measurements)
 
