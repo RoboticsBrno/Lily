@@ -74,8 +74,8 @@ public:
         appendLe<int64_t>(payload, measurements.timestamp);
         appendLe<uint16_t>(payload, measurements.lidar.size());
         for (const auto& measurement : measurements.lidar) {
-            appendLe<uint16_t>(payload, measurement.angle);
-            appendLe<uint16_t>(payload, measurement.distance);
+            appendLe<uint16_t>(payload, measurement.angleQ6);
+            appendLe<uint16_t>(payload, measurement.distanceQ2);
         }
 
         appendLe<int32_t>(payload, measurements.encoders.leftTicks);

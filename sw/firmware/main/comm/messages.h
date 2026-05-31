@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <vector>
+#include "../driver/rpLidar.h"
 
 
 namespace comm {
@@ -22,10 +23,7 @@ struct Command {
 };
 
 
-struct LidarMeasurement {
-    uint16_t angle = 0;
-    uint16_t distance = 0;
-};
+using LidarMeasurement = Measurement;
 
 
 struct EncodersMeasurement {

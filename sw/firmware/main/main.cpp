@@ -114,23 +114,27 @@ extern "C" void app_main() {
 
     while (true) {
         int64_t nowUs = esp_timer_get_time();
-        if (subscribed && nowUs - lastMeasurementUs >= 50 * 1000) {
+        if (subscribed) {
             lastMeasurementUs = nowUs;
 
             comm::Measurements measurements;
             measurements.timestamp = nowUs;
-            measurements.lidar.reserve(128);
+            measurements.lidar.reserve(192);
 
             while (measurements.lidar.size() < measurements.lidar.capacity()) {
-                auto lidarMeasurement = lily.lidar().getMeasurement();
-                if (!lidarMeasurement.has_value()) {
-                    break;
+                auto lidarMeasurements = lily.lidar().getMeasurementsExpress();
+
+                if (!lidarMeasurements.has_value()) {
+                    vTaskDelay(pdMS_TO_TICKS(1));
+                    continue;
                 }
 
-                measurements.lidar.push_back(comm::LidarMeasurement {
-                    .angle = lidarMeasurement->angle,
-                    .distance = lidarMeasurement->distance,
-                });
+                for (const auto& measurement : *lidarMeasurements) {
+                    measurements.lidar.push_back(comm::LidarMeasurement {
+                        .distanceQ2 = measurement.distanceQ2,
+                        .angleQ6 = measurement.angleQ6
+                    });
+                }
             }
 
             measurements.encoders = {

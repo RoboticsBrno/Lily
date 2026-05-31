@@ -9,27 +9,27 @@
 
 namespace test {
 
-void lidar(RpLidar& lidar) {
-    std::cout << "---Testing lidar---" << std::endl;
 
-    lidar.start();
+template<auto readFnMem>
+void lidarGeneric(RpLidar& lidar) {
+    std::cout << "---Testing lidar---" << std::endl;
 
     std::cout << "Measurements:" << std::endl;
     int samples = 30;
 
     while (samples > 0) {
-        auto measurement = lidar.getMeasurement();
-        if (!measurement) {
+        auto measurements = (lidar.*readFnMem)();
+        if (!measurements) {
             vTaskDelay(pdMS_TO_TICKS(10));
             continue;
         }
 
-        std::cout << "  D: " << measurement->distance
-                  << " A: " << measurement->angle
-                  << " Q: " << static_cast<int>(measurement->quality)
-                  << std::endl;
-
-        --samples;
+        for (const auto& measurement : *measurements) {
+            std::cout << "  D: " << measurement.distanceQ2
+                    << " A: " << measurement.angleQ6
+                    << std::endl;
+            --samples;
+        }
     }
 
     lidar.stop();
@@ -39,6 +39,10 @@ void lidar(RpLidar& lidar) {
 
     std::cout << "---Lidar test complete---" << std::endl;
 }
+
+constexpr auto lidar = lidarGeneric<&RpLidar::getMeasurement>;
+constexpr auto lidarExpress = lidarGeneric<&RpLidar::getMeasurementsExpress>;
+
 
 void motor(DCMotor& motor) {
     std::cout << "---Testing motor---" << std::endl;
@@ -114,7 +118,7 @@ void robot(Robot& robot) {
     claws(robot.claws());
 
     std::cout << "\nLidar" << std::endl;
-    lidar(robot.lidar());
+    lidarExpress(robot.lidar());
 
     std::cout << "\nStopping robot" << std::endl;
     robot.stop();

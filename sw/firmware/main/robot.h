@@ -2,11 +2,11 @@
 
 #include <memory>
 
-#include "./driver/rpLidar.h"
+#include <dcmotor.h>
 
+#include "./driver/rpLidar.h"
 #include "./driver/claws.h"
 
-#include <dcmotor.h>
 
 class Robot {
 
@@ -56,7 +56,7 @@ public:
         motorLeft().stop(false);
         motorRight().stop(false);
 
-        _lidar.start();
+        _lidar.startExpress();
     }
 
     void stop() {
