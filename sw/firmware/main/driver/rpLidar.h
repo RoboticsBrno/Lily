@@ -26,16 +26,14 @@ struct Measurement {
 struct ExpressCabin {
     uint16_t distance1;
     uint16_t distance2;
-    int8_t dtheta1Q3;
-    int8_t dtheta2Q3;
+    uint8_t dtheta1Q3;
+    uint8_t dtheta2Q3;
 
     static ExpressCabin parse(std::span<const uint8_t> data) {
         uint16_t d1 = (data[0] >> 2) | (static_cast<uint16_t>(data[1]) << 6);
         uint16_t d2 = (data[2] >> 2) | (static_cast<uint16_t>(data[3]) << 6);
-        uint8_t rawDt1 = ((data[0] & 0x03) << 4) | (data[4] & 0x0F);
-        uint8_t rawDt2 = ((data[2] & 0x03) << 4) | ((data[4] >> 4) & 0x0F);
-        int8_t dt1 = static_cast<int8_t>(rawDt1 << 2) >> 2;
-        int8_t dt2 = static_cast<int8_t>(rawDt2 << 2) >> 2;
+        uint8_t dt1 = ((data[0] & 0x03) << 4) | (data[4] & 0x0F);
+        uint8_t dt2 = ((data[2] & 0x03) << 4) | ((data[4] >> 4) & 0x0F);
         return {d1, d2, dt1, dt2};
     }
 };
