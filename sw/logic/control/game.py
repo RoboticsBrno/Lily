@@ -18,13 +18,15 @@ from params import (
     GAME_CLAW_CLOSE_DELAY,
     GAME_GOAL_TOLERANCE,
     GAME_MAX_SPEED,
+    GAME_RETURN_REVERSE_TIME,
+    GAME_REVERSE_SPEED,
     GAME_STARTUP_DELAY,
 )
 
 
 def _build_startup_s_path() -> list[Point]:
     return [
-        Point(0.20, 0.10),
+        Point(0.20, 0.00),
         Point(0.20, 0.75),
         Point(0.35, 0.90),
         Point(0.45, 0.90),
@@ -41,6 +43,7 @@ class PursuitState(Enum):
     SEEKING_STARTUP_PATH = auto()
     SEEKING_DETECTED_BEAR = auto()
     CAPTURE_BEAR = auto()
+    RETURN_REVERSE = auto()
     SEEKING_RETURN_PATH = auto()
     FINISHED = auto()
 
@@ -144,6 +147,13 @@ class GameStateMachine:
             return
 
         if self.state == PursuitState.CAPTURE_BEAR:
+            if time.time() >= self.delay_end:
+                self.state = PursuitState.RETURN_REVERSE
+                self.delay_end = time.time() + GAME_RETURN_REVERSE_TIME
+                self.controller.send_command(MoveCommand(left_speed=-GAME_REVERSE_SPEED, right_speed=-GAME_REVERSE_SPEED))
+            return
+
+        if self.state == PursuitState.RETURN_REVERSE:
             if time.time() >= self.delay_end:
                 self.state = PursuitState.SEEKING_RETURN_PATH
                 self.planned_path = list(reversed(_build_startup_s_path()))

@@ -44,7 +44,7 @@ SIM_SIM_HZ: float = 1000.0
 # --- Initial Pose ---
 
 INITIAL_POSE_X: float = 0.2
-INITIAL_POSE_Y: float = 0.2
+INITIAL_POSE_Y: float = 0.15
 
 
 # --- Default Bear ---
@@ -98,6 +98,8 @@ GAME_GOAL_TOLERANCE: float = 0.08
 GAME_MAX_SPEED: float = 1
 GAME_STARTUP_DELAY: float = 2.0
 GAME_CLAW_CLOSE_DELAY: float = 2.0
+GAME_RETURN_REVERSE_TIME: float = 0.5
+GAME_REVERSE_SPEED: float = 0.3
 
 
 # --- Keyboard control ---

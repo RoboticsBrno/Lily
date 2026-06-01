@@ -129,7 +129,7 @@ def create_server_from_map(
         config=config,
         lidar_config=lidar_config,
         motor_config=motor_config,
-        initial_pose=Pose(0.2, 0.2, 0.5 * math.pi),
+        initial_pose=Pose(0.2, 0.15, 0.5 * math.pi),
         bear=bear,
     )
     return RobotSimulatorServer(
@@ -147,7 +147,7 @@ class _SimulatorCommandCallback(MessageCallback):
     def on_message(self, data: bytes) -> None:
         try:
             command = self._server._serializer.deserialize_command(data)
-            print(f"Received command: {command}")
+            # print(f"Received command: {command}")
         except Exception:
             return
 

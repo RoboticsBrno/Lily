@@ -5,7 +5,7 @@ from typing import Optional
 
 from geometry.shapes import Point
 from geometry.transforms import Pose
-from geometry.util import wrap_angle
+from geometry.util import dist, wrap_angle
 from params import PP_BASE_POWER, PP_STEP_DISTANCE
 
 
@@ -61,9 +61,9 @@ class PurePursuitController:
 
         if self._reverse == ReverseMode.Force \
                 or abs(reverse_angle) < abs(forward_angle) and self._reverse != ReverseMode.Disallow:
-            return self._compute_wheel_powers(reverse_angle, drive_direction=-1.0)
+            return self._compute_wheel_powers(pose, reverse_angle, drive_direction=-1.0)
 
-        return self._compute_wheel_powers(forward_angle, drive_direction=1.0)
+        return self._compute_wheel_powers(pose, forward_angle, drive_direction=1.0)
 
     def _find_lookahead_point(self, pose: Pose) -> Optional[Point]:
         if not self.path:
@@ -126,10 +126,11 @@ class PurePursuitController:
 
     def _compute_wheel_powers(
         self,
+        pose: Pose,
         steering_angle: float,
         drive_direction: float = 1.0,
     ) -> PurePursuitOutput:
-        base_power = PP_BASE_POWER
+        base_power = PP_BASE_POWER * min(1.0, max(0.0, dist(Point(pose.x, pose.y), self.path[-1]) / 0.5))  # TODO: parametrize
         steering = (steering_angle / pi) * self.config.steering_gain
         turn = max(-2.0, min(2.0, steering))
 
@@ -139,7 +140,7 @@ class PurePursuitController:
         left_speed = linear_speed - angular_speed
         right_speed = linear_speed + angular_speed
 
-        scale = max(abs(left_speed), abs(right_speed))
+        scale = max(abs(left_speed), abs(right_speed), 1.0)
         left_speed /= scale
         right_speed /= scale
 

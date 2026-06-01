@@ -1,4 +1,5 @@
 from math import pi, sqrt
+import math
 from typing import Optional
 
 from geometry.shapes import Circle, Line, Point, ShapeGroup, ShapeItem
@@ -28,6 +29,11 @@ def angular_distance_pos(from_angle: float, to_angle: float) -> float:
 def dist2(p1: Point, p2: Point) -> float:
     """Return the squared distance between two points."""
     return (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2
+
+
+def dist(p1: Point, p2: Point) -> float:
+    """Return the squared distance between two points."""
+    return math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2)
 
 
 def lerp(a: Pose, b: Pose, t: float) -> Pose:
