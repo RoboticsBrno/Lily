@@ -7,7 +7,7 @@ from typing import Optional
 from comm.controller import Controller
 from comm.messages import ClawAction, ClawCommand, MoveCommand
 from control.bear_approach import plan_bear_approach_path
-from control.pure_pursuit import PurePursuitController
+from control.pure_pursuit import PurePursuitController, ReverseMode
 from geometry.shapes import Point
 from geometry.transforms import Pose
 from geometry.util import dist2
@@ -31,12 +31,7 @@ def _build_startup_s_path() -> list[Point]:
         Point(0.85, 0.50),
         Point(0.95, 0.50),
         Point(1.15, 0.70),
-        Point(1.15, 1.50),
-        Point(1.00, 1.80),
-        Point(0.70, 2.10),
-        # Point(0.70, 2.10),
-        # Point(1.0, 2.1),
-        # Point(1.2, 2.4),
+        Point(1.15, 1.60),
     ]
 
 
@@ -68,12 +63,19 @@ class GameStateMachine:
         return len(self.planned_path) >= 2 and self.pursuit.current_segment >= len(self.planned_path) - 3
 
     def _should_replan_to_bear(self, estimated: Pose, bear_detection: Optional[BearDetection]) -> bool:
-        return (
-            self._on_last_segment()
-            and bear_detection is not None
-            and bear_detection.position.y > 1.4
-            and dist2(Point(estimated.x, estimated.y), bear_detection.position) > (0.5 * 0.5)
-        )
+        if bear_detection is None or bear_detection.position.y < 1.40:
+            return False
+
+        if estimated.x > 0.9 and 0.5 < estimated.y < 1.5:  # early detection
+            return (
+                bear_detection.position.x > 0.9
+                and dist2(Point(estimated.x, estimated.y), bear_detection.position) > (0.5 * 0.5)
+            )
+        else:  # in area
+            return (
+                estimated.y > 1.5
+                and dist2(Point(estimated.x, estimated.y), bear_detection.position) > (0.5 * 0.5)
+            )
 
     def _replan_to_bear(self, estimated, bear_detection) -> None:
         assert bear_detection is not None
@@ -83,7 +85,7 @@ class GameStateMachine:
             detected_bear=bear_detection.position,
             world=self.localization.world,
         )
-        self.pursuit.update_plan(self.planned_path, False)
+        self.pursuit.update_plan(self.planned_path, ReverseMode.Disallow)
 
     def _stop_command(self) -> MoveCommand:
         return MoveCommand(left_speed=0, right_speed=0)
@@ -110,8 +112,13 @@ class GameStateMachine:
 
         if self.state == PursuitState.START:
             if time.time() > self.delay_end:
-                self.planned_path = _build_startup_s_path()
-                self.pursuit.update_plan(self.planned_path, True)
+                self.planned_path = _build_startup_s_path() + [
+                    Point(1.00, 2.10),
+                    Point(0.50, 2.30),
+                    Point(0.40, 1.80),
+                    Point(1.1, 2.4),
+                ]
+                self.pursuit.update_plan(self.planned_path, ReverseMode.Allow)
                 self.state = PursuitState.SEEKING_STARTUP_PATH
                 self.controller.send_command(self._follow_path(estimated))
             return
@@ -140,7 +147,7 @@ class GameStateMachine:
             if time.time() >= self.delay_end:
                 self.state = PursuitState.SEEKING_RETURN_PATH
                 self.planned_path = list(reversed(_build_startup_s_path()))
-                self.pursuit.update_plan(self.planned_path, True)
+                self.pursuit.update_plan(self.planned_path, ReverseMode.Force)
                 self.controller.send_command(self._follow_path(estimated))
             return
 

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum, auto
 from math import atan2, hypot, pi
 from typing import Optional
 
@@ -20,18 +21,24 @@ class PurePursuitOutput:
     right_power: float
 
 
+class ReverseMode(Enum):
+    Disallow = auto()
+    Allow = auto()
+    Force = auto()
+
+
 class PurePursuitController:
     def __init__(self, config: PurePursuitConfig):
         self.config = config
         self.path: list[Point] = []
-        self.allow_reverse = True
+        self._reverse = ReverseMode.Allow
         self.current_segment = 0
         self._step_t = 0.0
         self._step_distance = PP_STEP_DISTANCE
 
-    def update_plan(self, path: list[Point], allow_reverse: bool) -> None:
+    def update_plan(self, path: list[Point], reverse: ReverseMode) -> None:
         self.path = list(path)
-        self.allow_reverse = allow_reverse
+        self._reverse = reverse
         self.current_segment = 0
         self._step_t = 0.0
 
@@ -52,7 +59,8 @@ class PurePursuitController:
         forward_angle = self._compute_steering_angle(pose, lookahead_point)
         reverse_angle = wrap_angle(forward_angle + pi)
 
-        if abs(reverse_angle) < abs(forward_angle) and self.allow_reverse:
+        if self._reverse == ReverseMode.Force \
+                or abs(reverse_angle) < abs(forward_angle) and self._reverse != ReverseMode.Disallow:
             return self._compute_wheel_powers(reverse_angle, drive_direction=-1.0)
 
         return self._compute_wheel_powers(forward_angle, drive_direction=1.0)
@@ -123,7 +131,7 @@ class PurePursuitController:
     ) -> PurePursuitOutput:
         base_power = PP_BASE_POWER
         steering = (steering_angle / pi) * self.config.steering_gain
-        turn = max(-1.0, min(1.0, steering))
+        turn = max(-2.0, min(2.0, steering))
 
         linear_speed = base_power * drive_direction
         angular_speed = base_power * turn

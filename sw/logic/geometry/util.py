@@ -140,3 +140,7 @@ def find_nearest(
         raise ValueError("group must contain at least one shape")
 
     return nearest_shape, sqrt(nearest_dist2)
+
+
+def in_square(a: Point, b: Point, target: Point) -> bool:
+    return min(a.x, b.x) <= target.x <= max(a.x, b.x) and min(a.y, b.y) <= target.y <= max(a.y, b.y)
