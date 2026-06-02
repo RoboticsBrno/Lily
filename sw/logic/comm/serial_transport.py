@@ -2,28 +2,22 @@ from __future__ import annotations
 
 import struct
 import threading
-from typing import Any, Optional
+from typing import Optional
 
-from crc import Calculator, Configuration
 import serial
+import libscrc
 
 from .types import MessageCallback, Transport
+
+
+# CRC-8 (polynomial 0x07, init 0xFF, final_xor 0xFF).
+# Matches raw esp_rom_crc8_be(0, ...) behavior.
 
 
 class SerialTransport(Transport):
     _FRAME_INIT = 0xA5
     _HEADER_SIZE = 6
     _MAX_PAYLOAD_SIZE = 2048
-    _CRC = Calculator(  # Matches raw esp_rom_crc8_be(0, ...) behavior.
-        Configuration(
-            width=8,
-            polynomial=0x07,
-            init_value=0xFF,
-            final_xor_value=0xFF,
-            reverse_input=False,
-            reverse_output=False,
-        )
-    )
 
     def __init__(
         self,
@@ -34,7 +28,7 @@ class SerialTransport(Transport):
         self.device = device
         self.baud_rate = baud_rate
         self.timeout = timeout
-        self._serial: Optional[Any] = None
+        self._serial: Optional[serial.Serial] = None
         self._receive_thread: Optional[threading.Thread] = None
         self._running = False
         self._callback: Optional[MessageCallback] = None
@@ -151,4 +145,4 @@ class SerialTransport(Transport):
 
     @staticmethod
     def _compute_checksum(data: bytes) -> int:
-        return SerialTransport._CRC.checksum(data)
+        return libscrc.hacker8(data, 0x07, 0xFF, 0xFF, False, False)
