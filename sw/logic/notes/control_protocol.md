@@ -34,7 +34,7 @@ Payload bytes:
 Payload bytes:
 
 - `type`: `uint8` (value = `2`)
-- `action`: `uint8` (`0`: close, non-zero: open)
+- `pwm`: `int16` (`-1023` to `1023`, negative = close, positive = open, `0` = stop)
 
 #### Subscribe command
 
@@ -83,11 +83,11 @@ Each command is a JSON object with a `command` field specifying the type of comm
 ```json
 {
   "command": "claw",
-  "action": "open"  // or "close"
+  "pwm": 512
 }
 ```
 
-- `action` specifies whether to open or close the claws.
+- `pwm` controls the motor power. Positive values open the claws, negative values close them. Range: `-1023` to `1023`.
 
 
 #### Subscription command

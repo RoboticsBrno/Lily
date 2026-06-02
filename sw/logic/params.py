@@ -92,6 +92,13 @@ PP_STEP_DISTANCE: float = 0.05
 PP_BASE_POWER: float = 1.0
 
 
+# --- Claws ---
+
+CLAW_PWM_OPEN: int = 512
+CLAW_PWM_CLOSE: int = -512
+CLAW_PWM_FREE: int = 0
+
+
 # --- Game State Machine ---
 
 GAME_GOAL_TOLERANCE: float = 0.08

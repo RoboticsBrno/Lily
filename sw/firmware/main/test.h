@@ -87,11 +87,15 @@ void claws(Claws& claws) {
     std::cout << "---Testing claws---" << std::endl;
 
     std::cout << "Opening claws" << std::endl;
-    claws.setPos(0);
+    claws.setPower(512);
     vTaskDelay(pdMS_TO_TICKS(1000));
 
     std::cout << "Closing claws" << std::endl;
-    claws.setPos(100);
+    claws.setPower(-512);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    std::cout << "Freeing claws" << std::endl;
+    claws.setPower(0);
     vTaskDelay(pdMS_TO_TICKS(1000));
 
     std::cout << "---Claws test complete---" << std::endl;

@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import Optional
 
 from comm import (
-    ClawAction,
     ClawCommand,
     Controller,
     MoveCommand,
 )
+from params import CLAW_PWM_CLOSE, CLAW_PWM_FREE, CLAW_PWM_OPEN
 
 
 class KeyboardRobotController:
@@ -55,9 +55,11 @@ class KeyboardRobotController:
         elif normalized in ("space", "x"):
             self.send_stop()
         elif normalized == "o":
-            self._controller.send_command(ClawCommand(action=ClawAction.OPEN))
+            self._controller.send_command(ClawCommand(pwm=CLAW_PWM_OPEN))
         elif normalized == "c":
-            self._controller.send_command(ClawCommand(action=ClawAction.CLOSE))
+            self._controller.send_command(ClawCommand(pwm=CLAW_PWM_CLOSE))
+        elif normalized == "v":
+            self._controller.send_command(ClawCommand(pwm=CLAW_PWM_FREE))
 
     def key_up(self, key: str) -> None:
         normalized = key.lower()

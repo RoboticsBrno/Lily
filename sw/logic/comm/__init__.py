@@ -1,7 +1,6 @@
 """Communication module for robot control and sensor data"""
 
 from .messages import (
-    ClawAction,
     Command,
     MoveCommand,
     ClawCommand,
@@ -20,7 +19,6 @@ from .udp_transport import UdpTransport
 from .controller import Controller
 
 __all__ = [
-    "ClawAction",
     "Command",
     "MoveCommand",
     "ClawCommand",

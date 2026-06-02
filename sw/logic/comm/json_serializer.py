@@ -8,7 +8,6 @@ from .messages import (
     LidarMeasurement,
     EncodersMeasurement,
     Measurements,
-    ClawAction,
 )
 
 
@@ -24,7 +23,7 @@ class JsonSerializer:
         elif isinstance(command, ClawCommand):
             return json.dumps({
                 "command": "claw",
-                "action": command.action.value,
+                "pwm": command.pwm,
             }).encode("utf-8")
         elif isinstance(command, SubscribeCommand):
             return json.dumps({
@@ -46,7 +45,7 @@ class JsonSerializer:
             )
         elif command_type == "claw":
             return ClawCommand(
-                action=ClawAction(d["action"]),
+                pwm=d["pwm"],
             )
         elif command_type == "subscribe":
             return SubscribeCommand()

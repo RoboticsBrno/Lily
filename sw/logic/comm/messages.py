@@ -1,11 +1,5 @@
 from dataclasses import dataclass
 from typing import List, Union
-from enum import Enum
-
-
-class ClawAction(str, Enum):
-    OPEN = "open"
-    CLOSE = "close"
 
 
 # Commands
@@ -19,7 +13,7 @@ class MoveCommand:
 
 @dataclass
 class ClawCommand:
-    action: ClawAction
+    pwm: int
 
 
 @dataclass

@@ -6,6 +6,7 @@ from geometry.shapes import Circle, Line, Point, Vector
 from geometry.transforms import Pose
 from localization.particle_filter import ParticleFilterLocalizer
 from localization.bear_detector import BearDetector
+from params import BEAR_FEATURE_THRESHOLD
 from util.keyboard_controller import KeyboardRobotController
 from util.visualizer import Visualizer
 
@@ -26,6 +27,7 @@ KEY_MAP = {
     pygame.K_x: "x",
     pygame.K_o: "o",
     pygame.K_c: "c",
+    pygame.K_v: "v",
 }
 
 
@@ -96,7 +98,7 @@ def draw_lidar_history(
     lidar_history: deque[tuple[Point, Vector]],
     show_magnitude: bool = False,
 ) -> None:
-    max_feature = 0.05
+    max_feature = BEAR_FEATURE_THRESHOLD
     for lidar_point, feature in list(lidar_history):
         magnitude = feature.magnitude()
         normalized = 0.0 if max_feature <= 0.0 else max(0.0, min(1.0, magnitude / max_feature))

@@ -12,7 +12,6 @@ class ClawMotor {
     ledc_channel_t _channelB;
 
     static constexpr ledc_mode_t SPEED_MODE = LEDC_LOW_SPEED_MODE;
-    static constexpr int MAX_DUTY = 1023;
 
     static void setDuty(ledc_channel_t channel, int duty) {
         ledc_set_duty(SPEED_MODE, channel, duty);
@@ -20,6 +19,8 @@ class ClawMotor {
     }
 
 public:
+    static constexpr int MAX_DUTY = 1023;
+
     ClawMotor(
         gpio_num_t pinA,
         gpio_num_t pinB,
@@ -61,7 +62,7 @@ public:
     ClawMotor(ClawMotor&&) = default;
 
     void setPower(int power) {
-        power = std::clamp(power, -MAX_DUTY, MAX_DUTY);
+        power = std::clamp(power, -ClawMotor::MAX_DUTY, ClawMotor::MAX_DUTY);
 
         if (power > 0) {
             setDuty(_channelA, power);
@@ -86,8 +87,6 @@ class Claws {
     ClawMotor _left;
     ClawMotor _right;
 
-    static constexpr int CLAW_POWER = 512;
-
 public:
     Claws(
         gpio_num_t leftAPin,
@@ -108,27 +107,24 @@ public:
     Claws(Claws const&) = delete;
     Claws(Claws&&) = default;
 
-    void setPos(int pos) {
-        if (pos <= 0) {
-            open();
+    void setPower(int pos) {
+        pos = std::clamp(pos, -ClawMotor::MAX_DUTY, ClawMotor::MAX_DUTY);
+
+        if (pos > 0) {
+            _left.setPower(pos);
+            _right.setPower(-pos);
+        }
+        else if (pos < 0) {
+            _left.setPower(pos);
+            _right.setPower(-pos);
         }
         else {
-            close();
+            stop();
         }
     }
 
     int getPos() {
         return 0;
-    }
-
-    void open() {
-        _left.setPower(CLAW_POWER);
-        _right.setPower(-CLAW_POWER);
-    }
-
-    void close() {
-        _left.setPower(-CLAW_POWER);
-        _right.setPower(CLAW_POWER);
     }
 
     void stop() {

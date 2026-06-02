@@ -5,7 +5,7 @@ import time
 from typing import Optional
 
 from comm.controller import Controller
-from comm.messages import ClawAction, ClawCommand, MoveCommand
+from comm.messages import ClawCommand, MoveCommand
 from control.bear_approach import plan_bear_approach_path
 from control.pure_pursuit import PurePursuitController, ReverseMode
 from geometry.shapes import Point
@@ -15,18 +15,21 @@ from localization.bear_detector import BearDetection
 from localization.stack import LocalizationStack
 
 from params import (
+    CLAW_PWM_FREE,
     GAME_CLAW_CLOSE_DELAY,
     GAME_GOAL_TOLERANCE,
     GAME_MAX_SPEED,
     GAME_RETURN_REVERSE_TIME,
     GAME_REVERSE_SPEED,
     GAME_STARTUP_DELAY,
+    CLAW_PWM_CLOSE,
+    CLAW_PWM_OPEN,
 )
 
 
 def _build_startup_s_path() -> list[Point]:
     return [
-        Point(0.20, 0.00),
+        Point(0.20, 0.10),
         Point(0.20, 0.75),
         Point(0.35, 0.90),
         Point(0.45, 0.90),
@@ -110,7 +113,7 @@ class GameStateMachine:
         if self.state == PursuitState.INIT:
             self.delay_end = time.time() + GAME_STARTUP_DELAY
             self.state = PursuitState.START
-            self.controller.send_command(ClawCommand(ClawAction.CLOSE))
+            self.controller.send_command(ClawCommand(pwm=CLAW_PWM_CLOSE))
             return
 
         if self.state == PursuitState.START:
@@ -121,7 +124,7 @@ class GameStateMachine:
                     Point(0.40, 1.80),
                     Point(1.1, 2.4),
                 ]
-                self.pursuit.update_plan(self.planned_path, ReverseMode.Allow)
+                self.pursuit.update_plan(self.planned_path, ReverseMode.Disallow)
                 self.state = PursuitState.SEEKING_STARTUP_PATH
                 self.controller.send_command(self._follow_path(estimated))
             return
@@ -130,17 +133,19 @@ class GameStateMachine:
             if self._should_replan_to_bear(estimated, bear_detection):
                 self._replan_to_bear(estimated, bear_detection)
                 self.state = PursuitState.SEEKING_DETECTED_BEAR
-                self.controller.send_command(ClawCommand(ClawAction.OPEN))
+                self.controller.send_command(ClawCommand(pwm=CLAW_PWM_OPEN))
 
             self.controller.send_command(self._follow_path(estimated))
             return
 
         if self.state == PursuitState.SEEKING_DETECTED_BEAR:
+            if dist2(Point(estimated.x, estimated.y), self.planned_path[-1]) < (0.3 * 0.3):
+                self.controller.send_command(ClawCommand(pwm=CLAW_PWM_FREE))
             if self.pursuit.at_goal(estimated, GAME_GOAL_TOLERANCE):
                 self.state = PursuitState.CAPTURE_BEAR
                 self.delay_end = time.time() + GAME_CLAW_CLOSE_DELAY
                 self.controller.send_command(self._stop_command())
-                self.controller.send_command(ClawCommand(ClawAction.CLOSE))
+                self.controller.send_command(ClawCommand(pwm=CLAW_PWM_CLOSE))
                 return
 
             self.controller.send_command(self._follow_path(estimated))

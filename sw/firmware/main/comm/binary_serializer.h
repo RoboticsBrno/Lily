@@ -44,14 +44,14 @@ public:
         }
 
         if (commandType == COMMAND_CLAW) {
-            uint8_t rawAction = 0;
-            if (!readLe(data, offset, rawAction) || offset != data.size()) {
+            int16_t rawPwm = 0;
+            if (!readLe(data, offset, rawPwm) || offset != data.size()) {
                 return std::nullopt;
             }
 
             Command command;
             command.type = CommandType::Claw;
-            command.clawOpen = (rawAction != 0);
+            command.clawPwm = rawPwm;
             return command;
         }
 

@@ -3,7 +3,6 @@ from __future__ import annotations
 import struct
 
 from .messages import (
-    ClawAction,
     ClawCommand,
     Command,
     EncodersMeasurement,
@@ -27,9 +26,9 @@ class BinarySerializer:
 
         if isinstance(command, ClawCommand):
             return struct.pack(
-                "<BB",
+                "<Bh",
                 BinarySerializer._COMMAND_CLAW,
-                1 if command.action == ClawAction.OPEN else 0,
+                command.pwm,
             )
 
         if isinstance(command, SubscribeCommand):
@@ -50,8 +49,8 @@ class BinarySerializer:
             return MoveCommand(left_speed=left_speed / 1000, right_speed=right_speed / 1000)
 
         if command_type == BinarySerializer._COMMAND_CLAW:
-            (raw_action,) = struct.unpack("<B", body)
-            return ClawCommand(action=ClawAction.OPEN if raw_action else ClawAction.CLOSE)
+            (raw_pwm,) = struct.unpack("<h", body)
+            return ClawCommand(pwm=raw_pwm)
 
         if command_type == BinarySerializer._COMMAND_SUBSCRIBE:
             return SubscribeCommand()

@@ -93,12 +93,7 @@ extern "C" void app_main() {
                 break;
             }
             case comm::CommandType::Claw:
-                if (command->clawOpen) {
-                    lily.claws().setPos(0);
-                }
-                else {
-                    lily.claws().setPos(100);
-                }
+                lily.claws().setPower(command->clawPwm);
                 break;
             case comm::CommandType::Subscribe:
                 ESP_LOGD(LOG_TAG, "Subscribe command received: enabling telemetry stream");

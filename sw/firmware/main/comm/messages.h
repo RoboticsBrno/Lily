@@ -19,7 +19,7 @@ struct Command {
     CommandType type = CommandType::Subscribe;
     int16_t leftSpeed = 0;
     int16_t rightSpeed = 0;
-    bool clawOpen = false;
+    int16_t clawPwm = 0;
 };
 
 
