@@ -16,13 +16,13 @@
 
 constexpr const char* LOG_TAG = "robot_cmd";
 
-constexpr RegParams robutekV2Regulator = {
-    .kp = 7000,
-    .ki = 350,
-    .kd = 400,
-    .kv = 166,
-    .ka = 16000,
-    .kc = 72,
+constexpr RegParams reg = {
+    .kp = 10000,
+    .ki = 150,
+    .kd = 130,
+    .kv = 225,
+    .ka = 16500,
+    .kc = 20,
     .maxIOut = 1023,
     .unwindFactor = 1,
 };
@@ -39,8 +39,8 @@ auto lily = []() {
     ledc_timer_config(&timer_conf);
 
     return Robot(
-        std::make_unique<DCMotor>(GPIO_NUM_17, GPIO_NUM_18, GPIO_NUM_4, GPIO_NUM_5, robutekV2Regulator, LEDC_TIMER_0, LEDC_CHANNEL_0, LEDC_CHANNEL_1),
-        std::make_unique<DCMotor>(GPIO_NUM_9, GPIO_NUM_10, GPIO_NUM_1, GPIO_NUM_2, robutekV2Regulator, LEDC_TIMER_0, LEDC_CHANNEL_2, LEDC_CHANNEL_3),
+        std::make_unique<DCMotor>(GPIO_NUM_17, GPIO_NUM_18, GPIO_NUM_4, GPIO_NUM_5, reg, LEDC_TIMER_0, LEDC_CHANNEL_0, LEDC_CHANNEL_1),
+        std::make_unique<DCMotor>(GPIO_NUM_9, GPIO_NUM_10, GPIO_NUM_1, GPIO_NUM_2, reg, LEDC_TIMER_0, LEDC_CHANNEL_2, LEDC_CHANNEL_3),
         Claws(
             GPIO_NUM_15, GPIO_NUM_16, LEDC_TIMER_0, LEDC_CHANNEL_4, LEDC_CHANNEL_5,
             GPIO_NUM_11, GPIO_NUM_12, LEDC_TIMER_0, LEDC_CHANNEL_6, LEDC_CHANNEL_7
