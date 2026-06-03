@@ -104,9 +104,8 @@ CLAW_PWM_FREE: int = 0
 GAME_GOAL_TOLERANCE: float = 0.08
 GAME_MAX_SPEED: float = 1
 GAME_STARTUP_DELAY: float = 2.0
-GAME_CLAW_CLOSE_DELAY: float = 2.0
-GAME_RETURN_REVERSE_TIME: float = 0.5
-GAME_REVERSE_SPEED: float = 0.3
+GAME_CLAW_CLOSE_DELAY: float = 0.7
+GAME_RETURN_RAMP_UP_TIME: float = 1
 
 
 # --- Keyboard control ---
