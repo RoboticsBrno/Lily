@@ -11,12 +11,12 @@ namespace comm {
 enum class CommandType {
     Move,
     Claw,
-    Subscribe,
+    Arm,
 };
 
 
 struct Command {
-    CommandType type = CommandType::Subscribe;
+    CommandType type = CommandType::Arm;
     int16_t leftSpeed = 0;
     int16_t rightSpeed = 0;
     int16_t clawPwm = 0;

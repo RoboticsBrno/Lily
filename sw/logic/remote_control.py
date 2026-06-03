@@ -5,7 +5,7 @@ from pathlib import Path
 
 from comm.serial_transport import SerialTransport
 from geometry.transforms import Pose
-from comm.messages import SubscribeCommand
+from comm.messages import ArmCommand
 from util.init_common import (
     TARGET_FPS,
     build_controller,
@@ -58,7 +58,7 @@ def main() -> None:
             event,
             keyboard,
         )
-        controller.send_command(SubscribeCommand())
+        controller.send_command(ArmCommand())
 
     def on_ui_tick(dt_seconds: float) -> None:
         _ = dt_seconds
@@ -81,7 +81,7 @@ def main() -> None:
 
     visualizer.init()
     controller.start()
-    controller.send_command(SubscribeCommand())
+    controller.send_command(ArmCommand())
     try:
         visualizer.run(target_fps=max(1, TARGET_FPS))
     finally:

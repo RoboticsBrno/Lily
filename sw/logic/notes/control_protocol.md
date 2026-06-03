@@ -36,7 +36,7 @@ Payload bytes:
 - `type`: `uint8` (value = `2`)
 - `pwm`: `int16` (`-1023` to `1023`, negative = close, positive = open, `0` = stop)
 
-#### Subscribe command
+#### Arm command
 
 Payload bytes:
 
@@ -90,15 +90,15 @@ Each command is a JSON object with a `command` field specifying the type of comm
 - `pwm` controls the motor power. Positive values open the claws, negative values close them. Range: `-1023` to `1023`.
 
 
-#### Subscription command
+#### Arm command
 
 ```json
 {
-  "command": "subscribe"
+  "command": "arm"
 }
 ```
 
-- Subscribes the client to receive sensor measurements.
+- Arms the robot and enables the telemetry stream. The robot ignores move and claw commands until armed.
 
 
 ### Sensor measurements

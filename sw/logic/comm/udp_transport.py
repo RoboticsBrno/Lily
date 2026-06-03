@@ -31,7 +31,7 @@ class UdpTransport(Transport):
         assert self.send_socket is not None
 
         # Use one socket for both directions so outgoing commands (including
-        # subscribe) have the same source port we listen on.
+        # arm) have the same source port we listen on.
         self.receive_socket = self.send_socket
         local_port = self.receive_socket.getsockname()[1]
         if local_port == 0:

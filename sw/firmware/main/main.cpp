@@ -63,7 +63,7 @@ extern "C" void app_main() {
 
     comm::UartTransport transport(UART_NUM_0, 921600, 10240, 10240);
 
-    bool subscribed = false;
+    bool armed = false;
 
     transport.setReceiveCallback([&](std::span<const uint8_t> payload) {
         auto command = comm::BinarySerializer::deserializeCommand(payload);
@@ -74,6 +74,10 @@ extern "C" void app_main() {
 
         switch (command->type) {
             case comm::CommandType::Move: {
+                if (!armed) {
+                    ESP_LOGW(LOG_TAG, "Move command ignored: robot not armed");
+                    break;
+                }
                 lily.motorLeft().setSpeed(command->leftSpeed);
                 lily.motorRight().setSpeed(command->rightSpeed);
 
@@ -93,11 +97,15 @@ extern "C" void app_main() {
                 break;
             }
             case comm::CommandType::Claw:
+                if (!armed) {
+                    ESP_LOGW(LOG_TAG, "Claw command ignored: robot not armed");
+                    break;
+                }
                 lily.claws().setPower(command->clawPwm);
                 break;
-            case comm::CommandType::Subscribe:
-                ESP_LOGD(LOG_TAG, "Subscribe command received: enabling telemetry stream");
-                subscribed = true;
+            case comm::CommandType::Arm:
+                ESP_LOGD(LOG_TAG, "Arm command received: enabling telemetry stream");
+                armed = true;
                 break;
             default:
                 ESP_LOGW(LOG_TAG, "Unhandled command type=%d", static_cast<int>(command->type));
@@ -109,7 +117,7 @@ extern "C" void app_main() {
 
     while (true) {
         int64_t nowUs = esp_timer_get_time();
-        if (subscribed) {
+        if (armed) {
             lastMeasurementUs = nowUs;
 
             comm::Measurements measurements;

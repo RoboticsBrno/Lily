@@ -17,7 +17,7 @@ class ClawCommand:
 
 
 @dataclass
-class SubscribeCommand:
+class ArmCommand:
     pass
 
 # Sensor measurements
@@ -42,4 +42,4 @@ class Measurements:
     encoders: EncodersMeasurement
 
 
-Command = Union[MoveCommand, ClawCommand, SubscribeCommand]
+Command = Union[MoveCommand, ClawCommand, ArmCommand]

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from comm.udp_transport import UdpTransport
 from geometry.shapes import Line, Point
-from comm.messages import SubscribeCommand
+from comm.messages import ArmCommand
 from params import ROBOT_BODY_RADIUS
 from util.init_common import (
     CONTROLLER_RECEIVE_PORT,
@@ -99,7 +99,7 @@ def main() -> None:
     visualizer.init()
     server.start()
     controller.start()
-    controller.send_command(SubscribeCommand())
+    controller.send_command(ArmCommand())
     try:
         visualizer.run(target_fps=max(1, TARGET_FPS))
     finally:

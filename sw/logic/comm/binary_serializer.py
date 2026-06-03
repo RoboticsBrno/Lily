@@ -9,14 +9,14 @@ from .messages import (
     LidarMeasurement,
     Measurements,
     MoveCommand,
-    SubscribeCommand,
+    ArmCommand,
 )
 
 
 class BinarySerializer:
     _COMMAND_MOVE = 1
     _COMMAND_CLAW = 2
-    _COMMAND_SUBSCRIBE = 3
+    _COMMAND_ARM = 3
 
     @staticmethod
     def serialize_command(command: Command) -> bytes:
@@ -31,8 +31,8 @@ class BinarySerializer:
                 command.pwm,
             )
 
-        if isinstance(command, SubscribeCommand):
-            return struct.pack("<B", BinarySerializer._COMMAND_SUBSCRIBE)
+        if isinstance(command, ArmCommand):
+            return struct.pack("<B", BinarySerializer._COMMAND_ARM)
 
         raise ValueError(f"Unknown command type: {type(command)}")
 
@@ -52,8 +52,8 @@ class BinarySerializer:
             (raw_pwm,) = struct.unpack("<h", body)
             return ClawCommand(pwm=raw_pwm)
 
-        if command_type == BinarySerializer._COMMAND_SUBSCRIBE:
-            return SubscribeCommand()
+        if command_type == BinarySerializer._COMMAND_ARM:
+            return ArmCommand()
 
         raise ValueError(f"Unknown command type: {command_type}")
 

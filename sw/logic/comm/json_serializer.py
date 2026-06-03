@@ -4,7 +4,7 @@ from .messages import (
     Command,
     MoveCommand,
     ClawCommand,
-    SubscribeCommand,
+    ArmCommand,
     LidarMeasurement,
     EncodersMeasurement,
     Measurements,
@@ -25,9 +25,9 @@ class JsonSerializer:
                 "command": "claw",
                 "pwm": command.pwm,
             }).encode("utf-8")
-        elif isinstance(command, SubscribeCommand):
+        elif isinstance(command, ArmCommand):
             return json.dumps({
-                "command": "subscribe",
+                "command": "arm",
             }).encode("utf-8")
         else:
             raise ValueError(f"Unknown command type: {type(command)}")
@@ -47,8 +47,8 @@ class JsonSerializer:
             return ClawCommand(
                 pwm=d["pwm"],
             )
-        elif command_type == "subscribe":
-            return SubscribeCommand()
+        elif command_type == "arm":
+            return ArmCommand()
         else:
             raise ValueError(f"Unknown command type: {command_type}")
 

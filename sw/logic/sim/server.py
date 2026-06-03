@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 from comm.binary_serializer import BinarySerializer
-from comm.messages import Command, EncodersMeasurement, Measurements, SubscribeCommand
+from comm.messages import Command, EncodersMeasurement, Measurements, ArmCommand
 from comm.types import MessageCallback, Transport
 from geometry.shapes import Circle, ShapeGroup
 from geometry.transforms import Pose
@@ -40,7 +40,7 @@ class RobotSimulatorServer:
         self._transport = transport
         self._thread: Optional[threading.Thread] = None
         self._running = False
-        self._subscribed = False
+        self._armed = False
         self._pending_commands: deque[Command] = deque()
         self._lock = threading.Lock()
 
@@ -76,7 +76,7 @@ class RobotSimulatorServer:
             now = time.monotonic()
             if now >= next_publish:
                 next_publish += dt
-                if self._subscribed:
+                if self._armed:
                     payload = self._serializer.serialize_measurements(measurements_buf)
                     self._transport.send(payload)
                 measurements_buf.lidar = []
@@ -94,8 +94,11 @@ class RobotSimulatorServer:
             next_sim += dt_sim
 
     def _enqueue_command(self, command: Command) -> None:
-        if isinstance(command, SubscribeCommand):
-            self._subscribed = True
+        if isinstance(command, ArmCommand):
+            self._armed = True
+            return
+
+        if not self._armed:
             return
 
         with self._lock:

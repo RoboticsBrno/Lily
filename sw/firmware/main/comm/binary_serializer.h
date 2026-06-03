@@ -17,7 +17,7 @@ namespace comm {
 class BinarySerializer {
     static constexpr uint8_t COMMAND_MOVE = 1;
     static constexpr uint8_t COMMAND_CLAW = 2;
-    static constexpr uint8_t COMMAND_SUBSCRIBE = 3;
+    static constexpr uint8_t COMMAND_ARM = 3;
 
 public:
     static std::optional<Command> deserializeCommand(std::span<const uint8_t> data) {
@@ -55,12 +55,12 @@ public:
             return command;
         }
 
-        if (commandType == COMMAND_SUBSCRIBE) {
+        if (commandType == COMMAND_ARM) {
             if (offset != data.size()) {
                 return std::nullopt;
             }
             Command command;
-            command.type = CommandType::Subscribe;
+            command.type = CommandType::Arm;
             return command;
         }
 

@@ -5,7 +5,7 @@ from enum import Enum, auto
 from math import cos, pi, sin
 from pathlib import Path
 
-from comm.messages import Measurements, MoveCommand, SubscribeCommand
+from comm.messages import Measurements, MoveCommand, ArmCommand
 from comm.udp_transport import UdpTransport
 from control.pure_pursuit import PurePursuitConfig, PurePursuitController
 from control.game import GameStateMachine
@@ -127,7 +127,7 @@ def main() -> None:
     visualizer.init()
     server.start()
     controller.start()
-    controller.send_command(SubscribeCommand())
+    controller.send_command(ArmCommand())
     try:
         visualizer.run(target_fps=max(1, TARGET_FPS))
     finally:
