@@ -114,7 +114,7 @@ extern "C" void app_main() {
 
             comm::Measurements measurements;
             measurements.timestamp = nowUs;
-            measurements.lidar.reserve(192);
+            measurements.lidar.reserve(96);
 
             while (measurements.lidar.size() < measurements.lidar.capacity()) {
                 auto lidarMeasurements = lily.lidar().getMeasurementsExpress();
