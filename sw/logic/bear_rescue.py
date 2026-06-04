@@ -5,15 +5,6 @@ from control.pure_pursuit import PurePursuitConfig, PurePursuitController
 from params import PP_LOOKAHEAD_DISTANCE, PP_STEERING_GAIN, ROBOT_BODY_RADIUS
 from util.init_common import create_default_bear
 from util.launcher import TargetProgram
-from util.vis_common import (
-    draw_bear,
-    draw_bear_detection,
-    draw_candidate_points,
-    draw_estimated_pose,
-    draw_lidar_history,
-    draw_particles,
-    draw_path,
-)
 
 
 class BearRescueTarget(TargetProgram):
@@ -48,6 +39,16 @@ class BearRescueTarget(TargetProgram):
         )
 
     def on_ui_tick(self, dt_seconds, visualizer, localization, sim_server):
+        from util.vis_common import (
+            draw_bear,
+            draw_bear_detection,
+            draw_candidate_points,
+            draw_estimated_pose,
+            draw_lidar_history,
+            draw_particles,
+            draw_path,
+        )
+
         estimated = localization.localizer.get_estimate()
         bear_detection = localization.bear_detector.get_estimate()
         visualizer.draw(localization.world, color=(224, 228, 236))

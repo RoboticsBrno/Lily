@@ -1,0 +1,15 @@
+[Unit]
+Description=Bear Rescue GPIO Control
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/Lily/sw
+ExecStart=python3 %h/Lily/sw/service/bear_rescue_service.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
