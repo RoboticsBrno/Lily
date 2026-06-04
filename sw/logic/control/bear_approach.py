@@ -73,12 +73,27 @@ def sw_approach(detected_bear: Point) -> list[Point]:
     ]
 
 
+def ne_approach(detected_bear: Point) -> list[Point]:
+    off_x = detected_bear.x - 1.40
+    off_y = detected_bear.y - 2.80
+    a, b = (
+        (APPROACH_DISTANCE_CORNER_LARGE, APPROACH_DISTANCE_CORNER_SMALL)
+        if off_y > -off_x
+        else (APPROACH_DISTANCE_CORNER_SMALL, APPROACH_DISTANCE_CORNER_LARGE)
+    )
+    return [
+        Point(1.40 - a, 2.80 - b),
+        Point(1.40 - CORNER_OFFSET, 2.80 - CORNER_OFFSET),
+    ]
+
+
 WALLS_CORNERS = {  # N, S, W, E
     (True, False, False, False): n_approach,
     (False, True, False, False): s_approach,
     (False, False, True, False): w_approach,
     (False, False, False, True): e_approach,
     (True, False, True, False): nw_approach,
+    (True, False, False, True): ne_approach,
     (False, True, True, False): sw_approach,
 }
 
