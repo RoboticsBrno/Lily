@@ -111,6 +111,7 @@ class GameStateMachine:
         bear_detection = self.localization.bear_detector.get_estimate()
         if self.state == PursuitState.FINISHED:
             self.controller.send_command(self._stop_command())
+            self.controller.send_command(ClawCommand(pwm=CLAW_PWM_FREE))
             return
 
         if self.state == PursuitState.INIT:
