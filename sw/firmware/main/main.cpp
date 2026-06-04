@@ -16,6 +16,11 @@
 
 constexpr const char* LOG_TAG = "robot_cmd";
 
+
+constexpr auto REPORT_PERIOD_MS = 30;
+constexpr auto MAX_LIDAR_MEASUREMENTS = 96;
+
+
 constexpr RegParams reg = {
     .kp = 10000,
     .ki = 150,
@@ -121,16 +126,15 @@ extern "C" void app_main() {
 
     int64_t lastMeasurementUs = 0;
 
+    comm::Measurements measurements;
+    measurements.lidar.reserve(96);
+
     while (true) {
-        int64_t nowUs = esp_timer_get_time();
         if (armed) {
-            lastMeasurementUs = nowUs;
+            measurements.lidar.clear();
+            measurements.timestamp = esp_timer_get_time();
 
-            comm::Measurements measurements;
-            measurements.timestamp = nowUs;
-            measurements.lidar.reserve(96);
-
-            while (measurements.lidar.size() < measurements.lidar.capacity()) {
+            while (lastMeasurementUs + REPORT_PERIOD_MS * 1000 > esp_timer_get_time() && measurements.lidar.size() < MAX_LIDAR_MEASUREMENTS) {
                 auto lidarMeasurements = lily.lidar().getMeasurementsExpress();
 
                 if (!lidarMeasurements.has_value()) {
@@ -153,6 +157,8 @@ extern "C" void app_main() {
 
             auto payload = comm::BinarySerializer::serializeMeasurements(measurements);
             transport.send(std::span<const uint8_t>(payload));
+
+            lastMeasurementUs = measurements.timestamp;
         }
 
         vTaskDelay(1);

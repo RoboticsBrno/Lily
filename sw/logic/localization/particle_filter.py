@@ -113,6 +113,9 @@ class ParticleFilterLocalizer:
             self._smoothed_pose = proposed_smoothed
 
     def _apply_sensor_model(self, measurements: LidarMeasurementsRel) -> None:
+        if len(measurements.dxs) == 0:
+            return
+
         for _ in range(max(len(measurements.dxs) // PF_LIDAR_SUBSAMPLING_FACTOR, 1)):
             choices = np.random.choice(len(measurements.dxs), size=len(self.xs))
             dxs = measurements.dxs[choices]
