@@ -78,17 +78,20 @@ extern "C" void app_main() {
                     ESP_LOGW(LOG_TAG, "Move command ignored: robot not armed");
                     break;
                 }
-                lily.motorLeft().setSpeed(command->leftSpeed);
-                lily.motorRight().setSpeed(command->rightSpeed);
+                static constexpr float TICKS_PER_METER = 496.0f / (0.0387f * M_PI);
+                int cmdTicksLeft  = static_cast<int>(command->leftSpeed  * TICKS_PER_METER / 1000.0f);
+                int cmdTicksRight = static_cast<int>(command->rightSpeed * TICKS_PER_METER / 1000.0f);
+                lily.motorLeft().setSpeed(cmdTicksLeft);
+                lily.motorRight().setSpeed(cmdTicksRight);
 
-                if (command->leftSpeed == 0) {
+                if (cmdTicksLeft == 0) {
                     lily.motorLeft().stop(false);
                 }
                 else {
                     lily.motorLeft().moveInfinite();
                 }
 
-                if (command->rightSpeed == 0) {
+                if (cmdTicksRight == 0) {
                     lily.motorRight().stop(false);
                 }
                 else {

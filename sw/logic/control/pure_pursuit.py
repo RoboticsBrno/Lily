@@ -6,7 +6,7 @@ from typing import Optional
 from geometry.shapes import Point
 from geometry.transforms import Pose
 from geometry.util import wrap_angle
-from params import PP_BASE_POWER, PP_STEP_DISTANCE
+from params import PP_BASE_SPEED, PP_STEP_DISTANCE
 
 
 @dataclass(frozen=True)
@@ -129,7 +129,7 @@ class PurePursuitController:
         steering_angle: float,
         drive_direction: float = 1.0,
     ) -> PurePursuitOutput:
-        base_power = PP_BASE_POWER
+        base_power = PP_BASE_SPEED
         steering = (steering_angle / pi) * self.config.steering_gain
         turn = max(-2.0, min(2.0, steering))
 

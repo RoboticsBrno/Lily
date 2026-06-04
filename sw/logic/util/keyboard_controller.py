@@ -16,7 +16,7 @@ class KeyboardRobotController:
         controller: Controller,
         move_power: float = 1.0,
         turn_power: float = 0.75,
-        max_speed: float = 1.2
+        max_speed: float = 1.0
     ) -> None:
         if move_power < 0.0:
             raise ValueError("move_power must be non-negative")
@@ -93,7 +93,7 @@ class KeyboardRobotController:
 
         self._send_move(self._clamp_scale(left_power), self._clamp_scale(right_power))
 
-    def _send_move(self, left_speed: int, right_speed: int) -> None:
+    def _send_move(self, left_speed: float, right_speed: float) -> None:
         if (left_speed, right_speed) == self._last_move:
             return
 
@@ -102,5 +102,5 @@ class KeyboardRobotController:
         )
         self._last_move = (left_speed, right_speed)
 
-    def _clamp_scale(self, value: float, low: float = -1.0, high: float = 1.0) -> int:
-        return round(max(low, min(high, value)) * self._max_speed)
+    def _clamp_scale(self, value: float, low: float = -1.0, high: float = 1.0) -> float:
+        return max(low, min(high, value)) * self._max_speed
