@@ -86,10 +86,14 @@ def create_default_bear() -> Circle:
 
 def build_controller(
     transport: Transport,
-    recording_path: str = "recording.csv",
+    recording_path: str | None = None,
 ) -> Controller:
+    if recording_path is not None:
+        wrapped: Transport = RecordingTransport(transport, recording_path)
+    else:
+        wrapped = transport
     return Controller(
-        transport=RecordingTransport(transport, recording_path),
+        transport=wrapped,
         serializer=BinarySerializer(),
     )
 

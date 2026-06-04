@@ -45,6 +45,7 @@ SIM_SIM_HZ: float = 1000.0
 
 INITIAL_POSE_X: float = 0.2
 INITIAL_POSE_Y: float = 0.15
+INITIAL_POSE_THETA: float = pi / 2
 
 
 # --- Default Bear ---

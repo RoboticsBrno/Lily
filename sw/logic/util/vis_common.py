@@ -6,7 +6,7 @@ from geometry.shapes import Circle, Line, Point, Vector
 from geometry.transforms import Pose
 from localization.particle_filter import ParticleFilterLocalizer
 from localization.bear_detector import BearDetector
-from params import BEAR_FEATURE_THRESHOLD
+from params import BEAR_FEATURE_THRESHOLD, ROBOT_BODY_RADIUS
 from util.keyboard_controller import KeyboardRobotController
 from util.visualizer import Visualizer
 
@@ -206,3 +206,23 @@ def draw_path(visualizer: Visualizer, path: list[Point]) -> None:
         visualizer.draw(Line(a=path[i], b=path[i + 1]), color=(120, 170, 255), width_px=2)
     for p in path:
         visualizer.draw(p, color=(190, 220, 255), point_radius_px=3)
+
+
+def draw_sim_truth(visualizer: Visualizer, sim_server: Any) -> None:
+    truth = sim_server.get_true_pose()
+    heading_length = ROBOT_BODY_RADIUS
+    robot_center = Point(truth.x, truth.y)
+    heading_tip = Point(
+        truth.x + heading_length * cos(truth.yaw),
+        truth.y + heading_length * sin(truth.yaw),
+    )
+    visualizer.draw(
+        sim_server.robot.get_body_circle(), color=(255, 120, 90), width_px=2
+    )
+    visualizer.draw(
+        Line(a=robot_center, b=heading_tip), color=(255, 200, 90), width_px=2
+    )
+    left_claw, right_claw = sim_server.robot.get_claw_segments()
+    visualizer.draw(left_claw, color=(255, 150, 120), width_px=2)
+    visualizer.draw(right_claw, color=(255, 150, 120), width_px=2)
+    visualizer.draw(robot_center, color=(255, 255, 255), point_radius_px=2)
