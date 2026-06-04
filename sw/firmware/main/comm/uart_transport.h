@@ -134,11 +134,11 @@ public:
         uart_param_config(_uart, &config);
         uart_driver_install(_uart, rxBufferSize, txBufferSize, 0, nullptr, 0);
 
-        xTaskCreate(
+        xTaskCreatePinnedToCore(
             [](void* arg) {
                 static_cast<UartTransport*>(arg)->receiveLoop();
             },
-            "uart_rx", 4096, this, tskIDLE_PRIORITY + 1, nullptr
+            "uart_rx", 4096, this, tskIDLE_PRIORITY + 1, nullptr, 1
         );
     }
 
