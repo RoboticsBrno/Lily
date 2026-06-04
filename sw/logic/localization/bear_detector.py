@@ -19,6 +19,7 @@ from params import (
     BEAR_FEATURE_NORM_BIAS,
     BEAR_LERP_FACTOR,
     BEAR_MAX_CONFIDENCE,
+    BEAR_WALL_REJECTION_OFFSET,
 )
 
 
@@ -247,6 +248,19 @@ class BearDetector:
         for cluster in clusters.values():
             if len(cluster) < self.config.min_samples:
                 continue
+
+            # Check that all points are not on a wall
+            has_pt_inside = False
+            for point in cluster:
+                if (
+                    (BEAR_WALL_REJECTION_OFFSET) < point.x < (1.40 - BEAR_WALL_REJECTION_OFFSET)
+                    and (1.40 + BEAR_WALL_REJECTION_OFFSET) < point.y < (2.80 - BEAR_WALL_REJECTION_OFFSET)
+                ):
+                    has_pt_inside = True
+                    break
+            if not has_pt_inside:
+                continue
+
             if self._calc_cov(cluster) <= self.config.line_covariance_ratio_threshold:
                 continue
 
