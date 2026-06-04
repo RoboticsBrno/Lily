@@ -1,15 +1,26 @@
 from __future__ import annotations
 
-from control.game import GameStateMachine
+import time
+
+from control.game import GameStateMachine, PursuitState
 from control.pure_pursuit import PurePursuitConfig, PurePursuitController
-from params import PP_LOOKAHEAD_DISTANCE, PP_STEERING_GAIN, ROBOT_BODY_RADIUS
+from params import GAME_START_LED_PIN, GAME_START_BUTTON_PIN, PP_LOOKAHEAD_DISTANCE, PP_STEERING_GAIN, ROBOT_BODY_RADIUS
 from util.init_common import create_default_bear
 from util.launcher import TargetProgram
+
+try:
+    from gpiozero import LED, Button
+except ImportError:
+    LED = None
+    Button = None
 
 
 class BearRescueTarget(TargetProgram):
     def __init__(self) -> None:
         self.game: GameStateMachine | None = None
+        self._start_led = None
+        self._start_button = None
+        self._led_blink_next = 0.0
 
     @property
     def needs_keyboard(self) -> bool:
@@ -26,12 +37,40 @@ class BearRescueTarget(TargetProgram):
             controller=controller,
             localization=localization,
         )
+        if LED is not None and Button is not None:
+            try:
+                self._start_led = LED(GAME_START_LED_PIN)
+                self._start_button = Button(GAME_START_BUTTON_PIN, pull_up=True, bounce_time=0.1)
+                self._start_button.when_pressed = self._trigger_start
+            except KeyboardInterrupt:
+                raise
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._start_led = None
+                self._start_button = None
+
+    def _trigger_start(self) -> None:
+        if self.game is None:
+            return
+        self.game.request_start()
 
     def on_measurements(self, measurements, controller, localization):
         assert self.game is not None
 
         localization.on_measurements(measurements)
+
         self.game.loop()
+
+        if self._start_led is not None:
+            now = time.time()
+            if now >= self._led_blink_next:
+                self._led_blink_next = now + 0.5
+                if self._start_led.is_lit:
+                    self._start_led.off()
+                else:
+                    self._start_led.on()
+
         estimated = localization.localizer.get_estimate()
         print(
             f"State: {self.game.state}, "
@@ -61,4 +100,11 @@ class BearRescueTarget(TargetProgram):
         draw_candidate_points(visualizer, localization.bear_detector)
 
     def on_ui_event(self, event, visualizer, keyboard, sim_server):
-        pass
+        if self.game is not None and self.game.state == PursuitState.INIT:
+            if self._start_button is None:
+                try:
+                    import pygame
+                except ImportError:
+                    return
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    self._trigger_start()

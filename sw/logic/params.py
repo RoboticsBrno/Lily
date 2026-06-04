@@ -108,6 +108,9 @@ GAME_STARTUP_DELAY: float = 2.0
 GAME_CLAW_CLOSE_DELAY: float = 0.7
 GAME_RETURN_RAMP_UP_TIME: float = 1
 
+GAME_START_LED_PIN: int = 17
+GAME_START_BUTTON_PIN: int = 2
+
 
 # --- Keyboard control ---
 

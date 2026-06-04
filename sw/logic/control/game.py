@@ -63,6 +63,10 @@ class GameStateMachine:
         self.localization = localization
         self.state = PursuitState.INIT
         self.delay_end = 0.0
+        self._start_requested = False
+
+    def request_start(self) -> None:
+        self._start_requested = True
 
     def _on_last_segment(self) -> bool:
         return len(self.planned_path) >= 2 and self.pursuit.current_segment >= len(self.planned_path) - 3
@@ -110,9 +114,12 @@ class GameStateMachine:
             return
 
         if self.state == PursuitState.INIT:
-            self.delay_end = time.time() + GAME_STARTUP_DELAY
-            self.state = PursuitState.START
-            self.controller.send_command(ClawCommand(pwm=CLAW_PWM_CLOSE))
+            self.controller.send_command(self._stop_command())
+            if self._start_requested:
+                self.delay_end = time.time() + GAME_STARTUP_DELAY
+                self.state = PursuitState.START
+                self.controller.send_command(ClawCommand(pwm=CLAW_PWM_CLOSE))
+                self._start_requested = False
             return
 
         if self.state == PursuitState.START:
