@@ -107,8 +107,11 @@ extern "C" void app_main() {
                 lily.claws().setPower(command->clawPwm);
                 break;
             case comm::CommandType::Arm:
-                ESP_LOGD(LOG_TAG, "Arm command received: enabling telemetry stream");
-                armed = true;
+                if (!armed) {
+                    ESP_LOGD(LOG_TAG, "Arm command received: enabling telemetry stream");
+                    armed = true;
+                    lily.lidar().startExpress();
+                }
                 break;
             default:
                 ESP_LOGW(LOG_TAG, "Unhandled command type=%d", static_cast<int>(command->type));

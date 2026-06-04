@@ -55,8 +55,6 @@ public:
 
         motorLeft().stop(false);
         motorRight().stop(false);
-
-        _lidar.startExpress();
     }
 
     void stop() {
