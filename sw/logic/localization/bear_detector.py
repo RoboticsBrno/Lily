@@ -22,6 +22,13 @@ from params import (
     BEAR_WALL_REJECTION_OFFSET,
 )
 
+try:
+    from localization._bear_detector_fast import BearDetectorCore
+    _BEAR_DETECTOR_FAST_AVAILABLE = True
+except ImportError:
+    _BEAR_DETECTOR_FAST_AVAILABLE = False
+    BearDetectorCore = None
+
 
 KEEP_POINTS_ITERS = 1
 
@@ -117,12 +124,24 @@ class BearDetector:
         self.config = config
         self._scan_buffer: deque[tuple[Point, float, float]] = deque(maxlen=1000)
         self._candidate_points: deque[list[Point]] = deque([[]] * KEEP_POINTS_ITERS)
-        self._waiting: deque[tuple[Point, float, float]] \
-            = deque(([(Point(0, 0), 0.0, 1.0)] * (config.feature_detection_points)))
-        self._last_angle: float = 0.0
-        self._feat_vec = np.array([0.0, 0.0], dtype="f")
         self._candidate_detections: list[BearDetection] = []
         self._last_detection: Optional[BearDetection] = None
+
+        if _BEAR_DETECTOR_FAST_AVAILABLE:
+            self._core = BearDetectorCore(
+                config.feature_detection_points,
+                config.min_distance,
+                config.max_distance,
+                config.feature_threshold,
+                BEAR_FEATURE_NORM_BIAS,
+            )
+        else:
+            self._core = None
+            self._waiting: deque[tuple[np.ndarray, float, float]] \
+                = deque(([(np.asarray([0.0, 0.0], dtype="f"), 0.0, 1.0)]
+                        * (config.feature_detection_points)))
+            self._last_angle = 0.0
+            self._feat_vec = np.array([0.0, 0.0], dtype="f")
 
     def _end_revolution(self) -> None:
         # end of revolution
@@ -155,6 +174,37 @@ class BearDetector:
 
     def update(self, robot_pose: Pose, delta_x: float, delta_y: float,
                delta_theta: float, measurements: LidarMeasurementsRel) -> list[tuple[Point, Vector]]:
+        if self._core is not None:
+            return self._update_fast(robot_pose, measurements)
+        return self._update_slow(robot_pose, delta_x, delta_y, delta_theta, measurements)
+
+    def _update_fast(self, robot_pose: Pose, measurements: LidarMeasurementsRel) -> list[tuple[Point, Vector]]:
+        events = self._core.process(
+            robot_pose.x, robot_pose.y, robot_pose.yaw,
+            np.asarray(measurements.dxs, dtype=np.float64),
+            np.asarray(measurements.dys, dtype=np.float64),
+            np.asarray(measurements.angles, dtype=np.float64),
+            np.asarray(measurements.distances, dtype=np.float64),
+        )
+
+        output = []
+        for event in events:
+            if event[0] == 0:
+                self._end_revolution()
+            elif event[0] == 1:
+                _, x, y, feat_x, feat_y, angle, feat_val = event
+                self._scan_buffer.append((Point(x, y), angle, feat_val))
+                output.append((Point(x, y), Vector(feat_x, feat_y)))
+            else:  # event[0] == 2
+                _, x, y, feat_x, feat_y, angle, feat_val = event
+                self._candidate_points[-1].append(Point(x, y))
+                self._process_block()
+                output.append((Point(x, y), Vector(feat_x, feat_y)))
+
+        return output
+
+    def _update_slow(self, robot_pose: Pose, delta_x: float, delta_y: float,
+                     delta_theta: float, measurements: LidarMeasurementsRel) -> list[tuple[Point, Vector]]:
         output = []
 
         world_angles = (measurements.angles + robot_pose.yaw) % (2 * pi)
@@ -175,21 +225,20 @@ class BearDetector:
             if not self._is_distance_in_range(dist):
                 continue
 
-            world_point = Point(x, y)
-
-            self._waiting.append((world_point, angle, dist))
+            self._waiting.append((np.asarray([x, y], dtype="f"), angle, dist))
 
             mid = self.config.feature_detection_points // 2
             self._feat_vec = (
                 self._feat_vec
-                + self._waiting[mid][0].to_array() * self.config.feature_detection_points
-                - self._waiting[mid + 1][0].to_array() * self.config.feature_detection_points
-                - self._waiting[0][0].to_array()
-                + self._waiting[-1][0].to_array()
+                + self._waiting[mid][0] * self.config.feature_detection_points
+                - self._waiting[mid + 1][0] * self.config.feature_detection_points
+                - self._waiting[0][0]
+                + self._waiting[-1][0]
             )
             self._waiting.popleft()
 
-            mid_pt, mid_angle, mid_distance = self._waiting[mid]
+            mid_pt_a, mid_angle, mid_distance = self._waiting[mid]
+            mid_pt = Point.from_array(mid_pt_a)
             feat_vec = self._feat_vec * (1 / (self.config.feature_detection_points * (mid_distance + BEAR_FEATURE_NORM_BIAS)))
             feat_val = float(np.linalg.norm(feat_vec))
             if feat_val > self.config.feature_threshold:

@@ -6,3 +6,7 @@ results
 __old
 data/*.png
 data/*.npz
+
+*.so
+*.c
+build
