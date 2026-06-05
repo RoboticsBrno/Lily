@@ -4,7 +4,7 @@ import time
 
 from control.game import GameStateMachine, PursuitState
 from control.pure_pursuit import PurePursuitConfig, PurePursuitController
-from params import GAME_START_LED_PIN, GAME_START_BUTTON_PIN, PP_LOOKAHEAD_DISTANCE, PP_STEERING_GAIN, ROBOT_BODY_RADIUS
+from params import GAME_START_LED_PIN, GAME_START_BUTTON_PIN, PP_LOOKAHEAD_DISTANCE, PP_STEERING_GAIN, PP_DERIVATIVE_GAIN, ROBOT_BODY_RADIUS
 from util.init_common import create_default_bear
 from util.launcher import TargetProgram
 
@@ -32,6 +32,7 @@ class BearRescueTarget(TargetProgram):
                 PurePursuitConfig(
                     lookahead_distance=PP_LOOKAHEAD_DISTANCE,
                     steering_gain=PP_STEERING_GAIN,
+                    derivative_gain=PP_DERIVATIVE_GAIN,
                 )
             ),
             controller=controller,

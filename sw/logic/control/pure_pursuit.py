@@ -13,6 +13,7 @@ from params import PP_BASE_SPEED, PP_STEP_DISTANCE
 class PurePursuitConfig:
     lookahead_distance: float
     steering_gain: float
+    derivative_gain: float
 
 
 @dataclass(frozen=True)
@@ -35,12 +36,14 @@ class PurePursuitController:
         self.current_segment = 0
         self._step_t = 0.0
         self._step_distance = PP_STEP_DISTANCE
+        self._prev_yaw: Optional[float] = None
 
     def update_plan(self, path: list[Point], reverse: ReverseMode) -> None:
         self.path = list(path)
         self._reverse = reverse
         self.current_segment = 0
         self._step_t = 0.0
+        self._prev_yaw = None
 
     def at_goal(self, pose: Pose, tolerance: float) -> bool:
         if not self.path:
@@ -48,7 +51,12 @@ class PurePursuitController:
         goal = self.path[-1]
         return hypot(goal.x - pose.x, goal.y - pose.y) <= tolerance
 
-    def compute(self, pose: Pose) -> PurePursuitOutput:
+    def compute(self, pose: Pose, dt: float) -> PurePursuitOutput:
+        yaw_rate = 0.0
+        if self._prev_yaw is not None and dt > 0.0:
+            yaw_rate = wrap_angle(pose.yaw - self._prev_yaw) / dt
+        self._prev_yaw = pose.yaw
+
         if not self.path:
             return PurePursuitOutput(0.0, 0.0)
 
@@ -61,9 +69,9 @@ class PurePursuitController:
 
         if self._reverse == ReverseMode.Force \
                 or abs(reverse_angle) < abs(forward_angle) and self._reverse != ReverseMode.Disallow:
-            return self._compute_wheel_powers(reverse_angle, drive_direction=-1.0)
+            return self._compute_wheel_powers(reverse_angle, drive_direction=-1.0, yaw_rate=yaw_rate)
 
-        return self._compute_wheel_powers(forward_angle, drive_direction=1.0)
+        return self._compute_wheel_powers(forward_angle, drive_direction=1.0, yaw_rate=yaw_rate)
 
     def _find_lookahead_point(self, pose: Pose) -> Optional[Point]:
         if not self.path:
@@ -128,10 +136,14 @@ class PurePursuitController:
         self,
         steering_angle: float,
         drive_direction: float = 1.0,
+        yaw_rate: float = 0.0,
     ) -> PurePursuitOutput:
         base_power = PP_BASE_SPEED
         steering = (steering_angle / pi) * self.config.steering_gain
         turn = max(-2.0, min(2.0, steering))
+
+        turn -= self.config.derivative_gain * yaw_rate
+        turn = max(-2.0, min(2.0, turn))
 
         linear_speed = base_power * drive_direction
         angular_speed = base_power * turn

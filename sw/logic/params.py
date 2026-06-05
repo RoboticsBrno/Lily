@@ -89,9 +89,10 @@ BEAR_WALL_REJECTION_OFFSET: float = 0.05
 # --- Pure Pursuit ---
 
 PP_LOOKAHEAD_DISTANCE: float = 0.18
-PP_STEERING_GAIN: float = 4.0
+PP_STEERING_GAIN: float = 8.0
 PP_STEP_DISTANCE: float = 0.05
 PP_BASE_SPEED: float = 1.0
+PP_DERIVATIVE_GAIN: float = 0.032
 
 
 # --- Claws ---

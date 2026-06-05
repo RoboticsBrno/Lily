@@ -67,6 +67,7 @@ class GameStateMachine:
         self.state = PursuitState.INIT
         self.delay_end = 0.0
         self._start_requested = False
+        self._last_loop_time = 0.0
 
     def request_start(self) -> None:
         self._start_requested = True
@@ -102,14 +103,18 @@ class GameStateMachine:
     def _stop_command(self) -> MoveCommand:
         return MoveCommand(left_speed=0, right_speed=0)
 
-    def _follow_path(self, estimated: Pose, speed: float) -> MoveCommand:
-        control = self.pursuit.compute(estimated)
+    def _follow_path(self, estimated: Pose, speed: float, dt: float) -> MoveCommand:
+        control = self.pursuit.compute(estimated, dt)
         return MoveCommand(
             left_speed=_clamp_scale(control.left_power, -1, 1, speed),
             right_speed=_clamp_scale(control.right_power, -1, 1, speed),
         )
 
     def loop(self) -> None:
+        now = time.time()
+        dt = now - self._last_loop_time if self._last_loop_time > 0 else 0.0
+        self._last_loop_time = now
+
         estimated = self.localization.localizer.get_estimate()
         bear_detection = self.localization.bear_detector.get_estimate()
         if self.state == PursuitState.FINISHED:
@@ -136,7 +141,7 @@ class GameStateMachine:
                 ]
                 self.pursuit.update_plan(self.planned_path, ReverseMode.Disallow)
                 self.state = PursuitState.SEEKING_STARTUP_PATH
-                self.controller.send_command(self._follow_path(estimated, GAME_MAX_SPEED))
+                self.controller.send_command(self._follow_path(estimated, GAME_MAX_SPEED, dt))
             return
 
         if self.state == PursuitState.SEEKING_STARTUP_PATH:
@@ -146,7 +151,7 @@ class GameStateMachine:
                 self.controller.send_command(ClawCommand(pwm=CLAW_PWM_OPEN))
                 self.delay_end = 0.0
 
-            self.controller.send_command(self._follow_path(estimated, GAME_MAX_SPEED))
+            self.controller.send_command(self._follow_path(estimated, GAME_MAX_SPEED, dt))
             return
 
         if self.state == PursuitState.SEEKING_DETECTED_BEAR:
@@ -159,7 +164,7 @@ class GameStateMachine:
                 return
 
             speed = GAME_MAX_SPEED * min(1, dist(Point(estimated.x, estimated.y), self.planned_path[-1]) / 0.8)
-            self.controller.send_command(self._follow_path(estimated, speed))
+            self.controller.send_command(self._follow_path(estimated, speed, dt))
             return
 
         if self.state == PursuitState.BEAR_PUSH:
@@ -175,7 +180,7 @@ class GameStateMachine:
                 self.delay_end = time.time() + GAME_RETURN_RAMP_UP_TIME
                 self.planned_path = list(reversed(_build_startup_s_path()))
                 self.pursuit.update_plan(self.planned_path, ReverseMode.Force)
-                self.controller.send_command(self._follow_path(estimated, 0))
+                self.controller.send_command(self._follow_path(estimated, 0, dt))
             return
 
         if self.state == PursuitState.SEEKING_RETURN_PATH:
@@ -189,7 +194,7 @@ class GameStateMachine:
                 self.controller.send_command(self._stop_command())
                 return
 
-            self.controller.send_command(self._follow_path(estimated, speed))
+            self.controller.send_command(self._follow_path(estimated, speed, dt))
             return
 
 
