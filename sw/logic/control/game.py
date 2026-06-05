@@ -16,9 +16,11 @@ from localization.stack import LocalizationStack
 
 from params import (
     CLAW_PWM_FREE,
+    GAME_30CM_TIMEOUT,
     GAME_CLAW_CLOSE_DELAY,
     GAME_GOAL_TOLERANCE,
     GAME_MAX_SPEED,
+    GAME_PUSH_TIME,
     GAME_RETURN_RAMP_UP_TIME,
     GAME_STARTUP_DELAY,
     CLAW_PWM_CLOSE,
@@ -44,6 +46,7 @@ class PursuitState(Enum):
     START = auto()
     SEEKING_STARTUP_PATH = auto()
     SEEKING_DETECTED_BEAR = auto()
+    BEAR_PUSH = auto()
     CAPTURE_BEAR = auto()
     RETURN_REVERSE = auto()
     SEEKING_RETURN_PATH = auto()
@@ -141,23 +144,30 @@ class GameStateMachine:
                 self._replan_to_bear(estimated, bear_detection)
                 self.state = PursuitState.SEEKING_DETECTED_BEAR
                 self.controller.send_command(ClawCommand(pwm=CLAW_PWM_OPEN))
+                self.delay_end = 0.0
 
             self.controller.send_command(self._follow_path(estimated, GAME_MAX_SPEED))
             return
 
         if self.state == PursuitState.SEEKING_DETECTED_BEAR:
-            if dist2(Point(estimated.x, estimated.y), self.planned_path[-1]) < (0.3 * 0.3):
+            if self.delay_end == 0.0 and dist2(Point(estimated.x, estimated.y), self.planned_path[-1]) < (0.3 * 0.3):
                 self.controller.send_command(ClawCommand(pwm=CLAW_PWM_FREE))
-            if self.pursuit.at_goal(estimated, GAME_GOAL_TOLERANCE):
-                self.state = PursuitState.CAPTURE_BEAR
-                self.delay_end = time.time() + GAME_CLAW_CLOSE_DELAY
-                self.controller.send_command(self._stop_command())
-                self.controller.send_command(ClawCommand(pwm=CLAW_PWM_CLOSE))
+                self.delay_end = time.time() + GAME_30CM_TIMEOUT
+            if self.pursuit.at_goal(estimated, GAME_GOAL_TOLERANCE) or (self.delay_end != 0.0 and time.time() >= self.delay_end):
+                self.state = PursuitState.BEAR_PUSH
+                self.delay_end = time.time() + GAME_PUSH_TIME
                 return
 
             speed = GAME_MAX_SPEED * min(1, dist(Point(estimated.x, estimated.y), self.planned_path[-1]) / 0.8)
             self.controller.send_command(self._follow_path(estimated, speed))
             return
+
+        if self.state == PursuitState.BEAR_PUSH:
+            if time.time() >= self.delay_end:
+                self.state = PursuitState.CAPTURE_BEAR
+                self.delay_end = time.time() + GAME_CLAW_CLOSE_DELAY
+                self.controller.send_command(self._stop_command())
+                self.controller.send_command(ClawCommand(pwm=CLAW_PWM_CLOSE))
 
         if self.state == PursuitState.CAPTURE_BEAR:
             if time.time() >= self.delay_end:
