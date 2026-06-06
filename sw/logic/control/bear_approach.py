@@ -12,7 +12,7 @@ CORNER_OFFSET = 0.15  # side offset for corner goal
 CORNER_APPROACH_PT_A = (CORNER_OFFSET, 0.00)  # side, fwd
 CORNER_APPROACH_PT_B = (CORNER_OFFSET, 0.30)  # side, fwd
 CORNER_APPROACH_PT_C = (0.40, 0.80)  # side, fwd
-WALL_OFFSET = 0.0
+WALL_OFFSET = 0.10
 
 
 def n_approach(start: Point, detected_bear: Point) -> list[Point]:

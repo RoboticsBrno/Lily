@@ -156,7 +156,6 @@ class GameStateMachine:
 
         if self.state == PursuitState.SEEKING_DETECTED_BEAR:
             if self.delay_end == 0.0 and dist2(Point(estimated.x, estimated.y), self.planned_path[-1]) < (0.3 * 0.3):
-                self.controller.send_command(ClawCommand(pwm=CLAW_PWM_FREE))
                 self.delay_end = time.time() + GAME_30CM_TIMEOUT
             if self.pursuit.at_goal(estimated, GAME_GOAL_TOLERANCE) or (self.delay_end != 0.0 and time.time() >= self.delay_end):
                 self.state = PursuitState.BEAR_PUSH

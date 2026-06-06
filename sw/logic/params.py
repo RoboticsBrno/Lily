@@ -91,25 +91,25 @@ BEAR_WALL_REJECTION_OFFSET: float = 0.05
 PP_LOOKAHEAD_DISTANCE: float = 0.18
 PP_STEERING_GAIN: float = 8.0
 PP_STEP_DISTANCE: float = 0.05
-PP_BASE_SPEED: float = 1.0
-PP_DERIVATIVE_GAIN: float = 0.032
+PP_BASE_SPEED: float = 1.1
+PP_DERIVATIVE_GAIN: float = 0.03
 
 
 # --- Claws ---
 
-CLAW_PWM_OPEN: int = 512
-CLAW_PWM_CLOSE: int = -512
+CLAW_PWM_OPEN: int = 1023
+CLAW_PWM_CLOSE: int = -1023
 CLAW_PWM_FREE: int = 0
 
 
 # --- Game State Machine ---
 
 GAME_GOAL_TOLERANCE: float = 0.08
-GAME_MAX_SPEED: float = 1
-GAME_STARTUP_DELAY: float = 2.0
-GAME_CLAW_CLOSE_DELAY: float = 0.7
+GAME_MAX_SPEED: float = 1.1
+GAME_STARTUP_DELAY: float = 0.1
+GAME_CLAW_CLOSE_DELAY: float = 0.4
 GAME_RETURN_RAMP_UP_TIME: float = 1
-GAME_30CM_TIMEOUT: float = 1.0
+GAME_30CM_TIMEOUT: float = 0.6
 GAME_PUSH_TIME: float = 0.5
 
 GAME_START_LED_PIN: int = 17
@@ -120,4 +120,4 @@ GAME_START_BUTTON_PIN: int = 2
 
 KB_MOVE_POWER: float = 1.0
 KB_TURN_POWER: float = 0.75
-KB_MAX_SPEED: float = 1.2
+KB_MAX_SPEED: float = 1.1
