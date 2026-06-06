@@ -2,6 +2,7 @@ import base64
 import csv
 import threading
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 
 from .types import MessageCallback, Transport
@@ -12,7 +13,8 @@ class RecordingTransport(Transport, MessageCallback):
         self.transport = transport
         self.callback: Optional[MessageCallback] = None
         self._lock = threading.Lock()
-        self._csv_file = open(csv_path, "a", newline="", encoding="utf-8")
+        recording_path = self._get_available_csv_path(Path(csv_path))
+        self._csv_file = open(recording_path, "a", newline="", encoding="utf-8")
         self._csv_writer = csv.writer(self._csv_file)
         self._closed = False
 
@@ -88,3 +90,19 @@ class RecordingTransport(Transport, MessageCallback):
             return text
 
         return "b64:" + base64.b64encode(payload).decode("ascii")
+
+    @staticmethod
+    def _get_available_csv_path(csv_path: Path) -> Path:
+        if not csv_path.exists():
+            return csv_path
+
+        parent = csv_path.parent
+        stem = csv_path.stem
+        suffix = csv_path.suffix
+
+        index = 1
+        while True:
+            candidate = parent / f"{stem}-{index}{suffix}"
+            if not candidate.exists():
+                return candidate
+            index += 1
