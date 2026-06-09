@@ -30,14 +30,63 @@ from params import (
 
 def _build_startup_s_path() -> list[Point]:
     return [
-        Point(0.20, 0.10),
-        Point(0.20, 0.75),
-        Point(0.35, 0.90),
-        Point(0.45, 0.90),
-        Point(0.85, 0.50),
-        Point(0.95, 0.50),
-        Point(1.15, 0.70),
-        Point(1.15, 1.60),
+        Point(0.2, 0.1),
+        Point(0.1987, 0.1507),
+        Point(0.1954, 0.2023),
+        Point(0.1905, 0.2545),
+        Point(0.1848, 0.307),
+        Point(0.179, 0.3597),
+        Point(0.1735, 0.4121),
+        Point(0.1692, 0.4641),
+        Point(0.1665, 0.5154),
+        Point(0.1661, 0.5657),
+        Point(0.1688, 0.6148),
+        Point(0.175, 0.6624),
+        Point(0.1855, 0.7083),
+        Point(0.2009, 0.7521),
+        Point(0.2253, 0.7951),
+        Point(0.2593, 0.8358),
+        Point(0.2995, 0.8708),
+        Point(0.3424, 0.8966),
+        Point(0.3907, 0.9086),
+        Point(0.4424, 0.9028),
+        Point(0.4843, 0.8822),
+        Point(0.5226, 0.8534),
+        Point(0.5582, 0.8183),
+        Point(0.5919, 0.7784),
+        Point(0.6243, 0.7356),
+        Point(0.6562, 0.6914),
+        Point(0.6882, 0.6475),
+        Point(0.7211, 0.6056),
+        Point(0.7554, 0.5674),
+        Point(0.792, 0.5345),
+        Point(0.8315, 0.5087),
+        Point(0.8768, 0.4929),
+        Point(0.9297, 0.494),
+        Point(0.9744, 0.5116),
+        Point(1.0172, 0.5388),
+        Point(1.058, 0.5729),
+        Point(1.0948, 0.612),
+        Point(1.1257, 0.654),
+        Point(1.1488, 0.6971),
+        Point(1.1649, 0.7406),
+        Point(1.1773, 0.7856),
+        Point(1.1864, 0.8321),
+        Point(1.1925, 0.8797),
+        Point(1.196, 0.9285),
+        Point(1.1971, 0.9782),
+        Point(1.1963, 1.0287),
+        Point(1.1938, 1.08),
+        Point(1.1899, 1.1317),
+        Point(1.1851, 1.1839),
+        Point(1.1796, 1.2364),
+        Point(1.1737, 1.289),
+        Point(1.1678, 1.3417),
+        Point(1.1623, 1.3941),
+        Point(1.1574, 1.4464),
+        Point(1.1535, 1.4982),
+        Point(1.1509, 1.5494),
+        Point(1.15, 1.6),
     ]
 
 
@@ -87,7 +136,7 @@ class GameStateMachine:
         else:  # in area
             return (
                 estimated.y > 1.5
-                and dist2(Point(estimated.x, estimated.y), bear_detection.position) > (0.6 * 0.6)
+                and dist2(Point(estimated.x, estimated.y), bear_detection.position) > (0.5 * 0.5)
             )
 
     def _replan_to_bear(self, estimated, bear_detection) -> None:
@@ -162,7 +211,7 @@ class GameStateMachine:
                 self.delay_end = time.time() + GAME_PUSH_TIME
                 return
 
-            speed = GAME_MAX_SPEED * min(1, dist(Point(estimated.x, estimated.y), self.planned_path[-1]) / 0.8)
+            speed = GAME_MAX_SPEED * min(1, max(0.2, dist(Point(estimated.x, estimated.y), self.planned_path[-1]) / 0.6))
             self.controller.send_command(self._follow_path(estimated, speed, dt))
             return
 
@@ -186,7 +235,7 @@ class GameStateMachine:
             speed = GAME_MAX_SPEED * min(
                 1,
                 1 - (self.delay_end - time.time()) / GAME_RETURN_RAMP_UP_TIME,
-                dist(Point(estimated.x, estimated.y), self.planned_path[-1]) / 0.3
+                dist(Point(estimated.x, estimated.y), self.planned_path[-1]) / 0.2
             )
             if self.pursuit.at_goal(estimated, GAME_GOAL_TOLERANCE):
                 self.state = PursuitState.FINISHED

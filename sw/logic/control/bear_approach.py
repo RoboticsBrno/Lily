@@ -45,18 +45,22 @@ def e_approach(start: Point, detected_bear: Point) -> list[Point]:
 
 def nw_approach(start: Point, detected_bear: Point) -> list[Point]:
     off_x = start.x
-    off_y = start.y - 2.80
+    off_y = 2.80 - start.y
     a, b, c = (
         (CORNER_APPROACH_PT_A, CORNER_APPROACH_PT_B, CORNER_APPROACH_PT_C)
         if off_x < off_y
         else (tuple(reversed(CORNER_APPROACH_PT_A)), tuple(reversed(CORNER_APPROACH_PT_B)), tuple(reversed(CORNER_APPROACH_PT_C)))
     )
 
-    return [
+    res = [
         Point(0.00 + c[0], 2.80 - c[1]),
         Point(0.00 + b[0], 2.80 - b[1]),
         Point(0.00 + a[0], 2.80 - a[1]),
     ]
+    if off_x - c[0] < off_y - c[1]:
+        res.pop(0)
+
+    return res
 
 
 def sw_approach(start: Point, detected_bear: Point) -> list[Point]:
@@ -68,27 +72,35 @@ def sw_approach(start: Point, detected_bear: Point) -> list[Point]:
         else (tuple(reversed(CORNER_APPROACH_PT_A)), tuple(reversed(CORNER_APPROACH_PT_B)), tuple(reversed(CORNER_APPROACH_PT_C)))
     )
 
-    return [
+    res = [
         Point(0.00 + c[0], 1.40 + c[1]),
         Point(0.00 + b[0], 1.40 + b[1]),
         Point(0.00 + a[0], 1.40 + a[1]),
     ]
+    if off_x - c[0] < off_y - c[1]:
+        res.pop(0)
+
+    return res
 
 
 def ne_approach(start: Point, detected_bear: Point) -> list[Point]:
-    off_x = start.x - 1.40
-    off_y = start.y - 2.80
+    off_x = 1.40 - start.x
+    off_y = 2.80 - start.y
     a, b, c = (
         (CORNER_APPROACH_PT_A, CORNER_APPROACH_PT_B, CORNER_APPROACH_PT_C)
         if off_x < off_y
         else (tuple(reversed(CORNER_APPROACH_PT_A)), tuple(reversed(CORNER_APPROACH_PT_B)), tuple(reversed(CORNER_APPROACH_PT_C)))
     )
 
-    return [
+    res = [
         Point(1.40 - c[0], 2.80 - c[1]),
         Point(1.40 - b[0], 2.80 - b[1]),
         Point(1.40 - a[0], 2.80 - a[1]),
     ]
+    if off_x - c[0] < off_y - c[1]:
+        res.pop(0)
+
+    return res
 
 
 WALLS_CORNERS = {  # N, S, W, E
