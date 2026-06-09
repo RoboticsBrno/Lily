@@ -30,6 +30,7 @@ BEAR_RESCUE_CMD = [
     "--target", "bear_rescue",
     "--transport", "serial",
     "--device", "/dev/ttyUSB0",
+    "--recording-path", "/home/pi/recordings/bear_rescue.csv",
 ]
 
 
