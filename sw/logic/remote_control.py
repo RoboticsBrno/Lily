@@ -32,7 +32,8 @@ class RemoteControlTarget(TargetProgram):
         estimated = localization.localizer.get_estimate()
         bear_detection = localization.bear_detector.get_estimate()
         visualizer.draw(localization.world, color=(224, 228, 236))
-        draw_bear(visualizer, create_default_bear())
+        bear = sim_server.bear if sim_server is not None else create_default_bear()
+        draw_bear(visualizer, bear)
         draw_estimated_pose(visualizer, estimated, ROBOT_BODY_RADIUS)
         draw_bear_detection(visualizer, bear_detection, estimated)
         draw_particles(visualizer, localization.localizer)
@@ -42,8 +43,10 @@ class RemoteControlTarget(TargetProgram):
     def on_ui_event(self, event, visualizer, keyboard, sim_server):
         from util.vis_common import handle_ui_control_event, handle_robot_control_event
 
-        self._resizing_bear = handle_ui_control_event(
-            event, visualizer, create_default_bear(), self._resizing_bear
-        )
+        bear = sim_server.bear if sim_server is not None else None
+        if bear is not None:
+            self._resizing_bear = handle_ui_control_event(
+                event, visualizer, bear, self._resizing_bear
+            )
         if keyboard is not None:
             handle_robot_control_event(event, keyboard)

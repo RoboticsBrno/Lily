@@ -21,6 +21,7 @@ class BearRescueTarget(TargetProgram):
         self._start_led = None
         self._start_button = None
         self._led_blink_next = 0.0
+        self._resizing_bear = False
 
     @property
     def needs_keyboard(self) -> bool:
@@ -92,7 +93,8 @@ class BearRescueTarget(TargetProgram):
         estimated = localization.localizer.get_estimate()
         bear_detection = localization.bear_detector.get_estimate()
         visualizer.draw(localization.world, color=(224, 228, 236))
-        draw_bear(visualizer, create_default_bear())
+        bear = sim_server.bear if sim_server is not None else create_default_bear()
+        draw_bear(visualizer, bear)
         draw_path(visualizer, self.game.planned_path)
         draw_estimated_pose(visualizer, estimated, ROBOT_BODY_RADIUS)
         draw_bear_detection(visualizer, bear_detection, estimated)
@@ -101,6 +103,13 @@ class BearRescueTarget(TargetProgram):
         draw_candidate_points(visualizer, localization.bear_detector)
 
     def on_ui_event(self, event, visualizer, keyboard, sim_server):
+        from util.vis_common import handle_ui_control_event
+
+        bear = sim_server.bear if sim_server is not None else None
+        if bear is not None:
+            self._resizing_bear = handle_ui_control_event(
+                event, visualizer, bear, self._resizing_bear
+            )
         if self.game is not None and self.game.state == PursuitState.INIT:
             if self._start_button is None:
                 try:

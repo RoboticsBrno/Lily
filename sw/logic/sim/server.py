@@ -27,12 +27,14 @@ class RobotSimulatorServer:
         transport: Transport,
         publish_hz: float = SIM_PUBLISH_HZ,
         sim_hz: float = SIM_SIM_HZ,
+        bear: Optional[Circle] = None,
     ):
         if publish_hz <= 0.0:
             raise ValueError("publish_hz must be positive")
 
         self.world = world
         self.robot = robot
+        self.bear = bear
         self.publish_hz = publish_hz
         self.sim_hz = sim_hz
 
@@ -140,6 +142,7 @@ def create_server_from_map(
         robot=robot,
         transport=transport,
         publish_hz=publish_hz,
+        bear=bear,
     )
 
 
